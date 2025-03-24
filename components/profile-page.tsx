@@ -1,0 +1,224 @@
+// app/profile/page.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import { CreditCard, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { SignOutButton, useUser } from "@clerk/nextjs";
+
+type ProfileData = {
+  email: string;
+  credits: number;
+  memberSince: string;
+  purchases: {
+    id: string;
+    date: string;
+    credits: number;
+    amount: number;
+    variant?: string;
+  }[];
+};
+
+export function ProfilePage() {
+  const { isSignedIn } = useUser();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [isSignedIn]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      const data = await res.json();
+      setProfileData(data);
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBuyCredits = async () => {
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}), // No packageId needed
+      });
+      const { checkoutUrl } = await res.json();
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Failed to initiate credit purchase");
+    }
+  };
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center p-6">
+            <h2 className="mb-4 text-xl font-semibold">Sign In Required</h2>
+            <p className="mb-6 text-center text-gray-600">
+              Please sign in to view your profile.
+            </p>
+            <Button
+              asChild
+              className="transition-transform duration-200 hover:scale-105"
+            >
+              <a href="/sign-in">Sign In</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) return <div>Loading...</div>;
+  if (!profileData) return <div>Error loading profile data</div>;
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Your Profile</h1>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Credit Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center">
+              <div className="mb-4 text-center">
+                <p className="text-3xl font-bold">{profileData.credits}</p>
+                <p className="text-sm text-gray-500">Available Credits</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                <p>{profileData.email}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Plan</h3>
+                <p>Pay As You Go</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Member Since
+                </h3>
+                <p>{new Date(profileData.memberSince).toLocaleDateString()}</p>
+              </div>
+              <SignOutButton>
+                <Button
+                  variant="outline"
+                  className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 transition-transform duration-200 hover:scale-105"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </SignOutButton>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Buy Credits</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleBuyCredits}
+            className="bg-green-500 hover:bg-green-600 transition-transform duration-200 hover:scale-105"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            Buy Credits
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Purchase History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {profileData.purchases.length === 0 ? (
+            <p>No purchase history available.</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Credits Bought</TableHead>
+                      <TableHead>Amount Paid</TableHead>
+                      <TableHead>Package</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {profileData.purchases.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {new Date(item.date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>{item.credits}</TableCell>
+                        <TableCell>${item.amount.toFixed(2)}</TableCell>
+                        <TableCell>{item.variant || "Unknown"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="mt-6 grid gap-4 md:hidden">
+                {profileData.purchases.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between border-b pb-4"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {item.credits} Credits
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Package: {item.variant || "Unknown"}
+                      </p>
+                    </div>
+                    <p className="font-medium">${item.amount.toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

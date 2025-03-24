@@ -1,0 +1,40 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // NeonDB connection string
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique // Clerk user ID
+  credits   Int      @default(5) // Default 5 credits for new users
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  conversions Conversion[]
+  purchases Purchase[]
+}
+
+model Conversion {
+  id        String   @id @default(uuid())
+  userId    String?  // Null for unauthenticated users
+  type      String   // "image-to-text", "image-to-code", etc.
+  inputUrl  String   // URL of uploaded image (stored in a cloud service like Vercel Blob)
+  output    String   // Result (text, code, etc.)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model Purchase {
+  id            String   @id @default(uuid())
+  userId        String
+  creditsBought Int
+  amountPaid    Float
+  lemonSqueezyId String
+  variant       String?  // Add this field to store the variant name (e.g., "Starter")
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+}
