@@ -176,7 +176,7 @@ export function ConvertPage() {
   return (
     <Suspense fallback="<div>Loading...</div>">
       <div className="mx-auto max-w-5xl">
-        <h1 className="mb-6 text-2xl font-bold md:text-3xl">
+        <h1 className="mb-6 text-xl font-bold md:text-3xl">
           Convert Your Image
         </h1>
 
