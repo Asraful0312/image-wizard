@@ -5,6 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { Clerk } from "@clerk/clerk-sdk-node";
 
+type UserType = {
+  id: string;
+  createdAt: Date;
+  creditsBought: number;
+  amountPaid: number;
+  variant: string | null;
+};
+
 const clerk = Clerk({ apiKey: process.env.CLERK_SECRET_KEY });
 
 export async function GET(req: NextRequest) {
@@ -44,7 +52,7 @@ export async function GET(req: NextRequest) {
       email: clerkUser.emailAddresses[0]?.emailAddress || "No email available",
       credits: user.credits,
       memberSince: user.createdAt.toISOString(),
-      purchases: user.purchases.map((p) => ({
+      purchases: user.purchases.map((p: UserType) => ({
         id: p.id,
         date: p.createdAt.toISOString(),
         credits: p.creditsBought,
