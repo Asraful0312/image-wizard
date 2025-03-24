@@ -4,6 +4,14 @@ import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
+type ConversationType = {
+  id: string;
+  createdAt: Date;
+  type: string;
+  inputUrl: string;
+  output: string;
+};
+
 export async function GET(req: NextRequest) {
   const { userId: clerkId } = getAuth(req); // Clerk ID
   console.log("Clerk ID:", clerkId);
@@ -40,7 +48,7 @@ export async function GET(req: NextRequest) {
     console.log("Conversions:", conversions);
 
     return NextResponse.json({
-      conversions: conversions.map((c) => ({
+      conversions: conversions.map((c: ConversationType) => ({
         id: c.id,
         date: c.createdAt.toISOString(),
         type: c.type,
