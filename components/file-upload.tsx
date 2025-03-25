@@ -1,10 +1,10 @@
+// app/components/file-upload.tsx
 "use client";
 export const dynamic = "force-dynamic";
 
 import type React from "react";
-
 import { useState, useRef } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
@@ -47,18 +47,22 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
   };
 
   const handleFile = (file: File) => {
-    if (file.type.startsWith("image/")) {
+    if (file.type.startsWith("image/") || file.type === "application/pdf") {
       setSelectedFile(file);
       onFileSelected(file);
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Create preview for images only
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setPreview(null); // No preview for PDFs
+      }
     } else {
-      alert("Please upload an image file");
+      alert("Please upload an image or PDF file");
     }
   };
 
@@ -85,10 +89,10 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
           >
             <Upload className="mb-4 h-10 w-10 text-gray-400" />
             <h3 className="mb-2 text-lg font-medium">
-              Drag and drop your image here
+              Drag and drop your image or PDF here
             </h3>
             <p className="mb-4 text-sm text-gray-500">
-              Supports: JPG, PNG, GIF (max 10MB)
+              Supports: JPG, PNG, GIF, PDF (max 5MB)
             </p>
             <Button
               onClick={() => inputRef.current?.click()}
@@ -100,20 +104,29 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
               ref={inputRef}
               type="file"
               className="hidden"
-              accept="image/*"
+              accept="image/*,application/pdf"
               onChange={handleChange}
             />
           </div>
         ) : (
           <div className="space-y-4">
             <div className="relative rounded-lg border overflow-hidden">
-              <Image
-                src={preview || ""}
-                alt="Preview"
-                height={300}
-                width={500}
-                className="mx-auto max-h-[300px] w-auto object-contain"
-              />
+              {selectedFile.type.startsWith("image/") ? (
+                <Image
+                  src={preview || ""}
+                  alt="Preview"
+                  height={300}
+                  width={500}
+                  className="mx-auto max-h-[300px] w-auto object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] bg-gray-100">
+                  <FileText className="h-16 w-16 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">
+                    PDF Preview Not Available
+                  </p>
+                </div>
+              )}
               <Button
                 variant="destructive"
                 size="icon"

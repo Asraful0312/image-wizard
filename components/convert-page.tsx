@@ -1,6 +1,6 @@
+// app/ConvertPageContent.tsx
 "use client";
-export const dynamic = "force-dynamic";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Copy, Check, Sparkles } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/nextjs";
@@ -18,6 +18,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { convertImageToText } from "@/actions";
 
 export function ConvertPage() {
   const searchParams = useSearchParams();
@@ -70,14 +71,24 @@ export function ConvertPage() {
   const handleConvert = async () => {
     if (!selectedFile) return;
 
-    if (!isSignedIn && freeConversions >= 3 && conversionType === "text") {
-      alert("Please sign in to continue with free Tesseract conversions");
+    if (
+      !isSignedIn &&
+      freeConversions >= 3 &&
+      (conversionType === "text" || conversionType === "pdf-to-text")
+    ) {
+      alert("Please sign in to continue with free conversions");
       return;
     }
 
     if (isSignedIn) {
       const creditsRequired =
-        conversionType === "code" ? 3 : conversionType === "text-ai" ? 2 : 0;
+        conversionType === "pdf-to-text"
+          ? 3 // 3 credits for PDF-to-text
+          : conversionType === "code"
+          ? 3
+          : conversionType === "text-ai"
+          ? 2
+          : 1; // 1 for text, 2 for text-ai, 3 for code
       if (credits === null || credits < creditsRequired) {
         alert("Insufficient credits or credits not loaded");
         return;
@@ -86,37 +97,44 @@ export function ConvertPage() {
 
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("image", selectedFile);
-      formData.append("type", conversionType);
-      if (conversionType === "text") formData.append("language", language);
+      // Convert the file to a base64 string to pass to the Server Action
+      const buffer = await selectedFile.arrayBuffer();
+      const base64File = `data:${selectedFile.type};base64,${Buffer.from(
+        buffer
+      ).toString("base64")}`;
 
-      const endpoint =
-        conversionType === "text" ? "/api/convert" : "/api/convert-code";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: formData,
+      // Call the Server Action
+      const { text, error } = await convertImageToText({
+        file: base64File,
+        type: conversionType,
+        language,
+        clerkId: user?.id || null,
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        setIsLoading(false);
-        throw new Error(errorData.error || "Conversion failed");
+      if (error) {
+        throw new Error(error);
       }
 
-      const data = await res.json();
-
-      const isCode = data.type === "code" || detectCode(data.text);
+      const isCode = conversionType === "code" || detectCode(text as string);
       setIsCodeDetected(isCode);
-      setResult(data.text);
+      setResult(text);
 
-      if (!isSignedIn && conversionType === "text") {
+      if (
+        !isSignedIn &&
+        (conversionType === "text" || conversionType === "pdf-to-text")
+      ) {
         const newCount = freeConversions + 1;
         setFreeConversions(newCount);
         localStorage.setItem("freeConversions", newCount.toString());
       } else if (isSignedIn) {
         const creditsDeducted =
-          conversionType === "code" ? 3 : conversionType === "text-ai" ? 2 : 0;
+          conversionType === "pdf-to-text"
+            ? 3 // 3 credits for PDF-to-text
+            : conversionType === "code"
+            ? 3
+            : conversionType === "text-ai"
+            ? 2
+            : 1; // 1 for text, 2 for text-ai, 3 for code
         setCredits((prev) => (prev !== null ? prev - creditsDeducted : 0));
         const creditsRes = await fetch("/api/user/credits");
         const creditsData = await creditsRes.json();
@@ -127,7 +145,7 @@ export function ConvertPage() {
       toast.error("An error occurred during conversion");
     } finally {
       setIsLoading(false);
-      toast.success("Image converted successfully");
+      toast.success("File converted successfully");
     }
   };
 
@@ -163,7 +181,7 @@ export function ConvertPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // No packageId needed
+        body: JSON.stringify({}),
       });
       const { checkoutUrl } = await res.json();
       window.location.href = checkoutUrl;
@@ -174,202 +192,220 @@ export function ConvertPage() {
   };
 
   return (
-    <Suspense fallback="<div>Loading...</div>">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-6 text-xl font-bold md:text-3xl">
-          Convert Your Image
-        </h1>
+    <div className="mx-auto max-w-5xl">
+      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Convert Your File</h1>
 
-        <div className="mb-6 grid gap-6 md:grid-cols-[2fr_1fr]">
-          <div>
-            <FileUpload onFileSelected={handleFileSelected} />
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversion Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+      <div className="mb-6 grid gap-6 md:grid-cols-[2fr_1fr]">
+        <div>
+          <FileUpload onFileSelected={handleFileSelected} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversion Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Conversion Type
+                </label>
+                <Select
+                  value={conversionType}
+                  onValueChange={setConversionType}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="w-full">
+                    <SelectItem value="text">
+                      Image to Text{" "}
+                      <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
+                        {isSignedIn
+                          ? "1 credit (OCR.Space)"
+                          : "Free (OCR.Space)"}
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="pdf-to-text">
+                      PDF to Text{" "}
+                      <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
+                        {isSignedIn
+                          ? "3 credits (OCR.Space)"
+                          : "Free (OCR.Space)"}
+                      </span>
+                    </SelectItem>
+                    <SelectItem
+                      value="text-ai"
+                      className="flex items-center gap-1"
+                    >
+                      Image to Text{" "}
+                      <span className="flex items-center">
+                        (
+                        <Sparkles className="shrink-0 size-3 text-purple-500" />{" "}
+                        AI)
+                      </span>
+                      <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
+                        2 credits (Gemini)
+                      </span>
+                    </SelectItem>
+                    <SelectItem
+                      value="code"
+                      className="flex items-center gap-1"
+                    >
+                      Image to Code{" "}
+                      <span className="flex items-center">
+                        (
+                        <Sparkles className="shrink-0 size-3 text-purple-500" />{" "}
+                        AI)
+                      </span>
+                      <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
+                        3 credits (Gemini)
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(conversionType === "text" ||
+                conversionType === "pdf-to-text") && (
                 <div>
                   <label className="mb-2 block text-sm font-medium">
-                    Conversion Type
+                    Language
                   </label>
-                  <Select
-                    value={conversionType}
-                    onValueChange={setConversionType}
-                  >
+                  <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent className="w-full">
-                      <SelectItem value="text">
-                        Image to Text{" "}
-                        <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
-                          Free (Tesseract)
-                        </span>
+                      <SelectItem value="eng">English</SelectItem>
+                      <SelectItem value="ben" disabled>
+                        Bangla (Bengali) - Not Supported
                       </SelectItem>
-                      <SelectItem
-                        value="text-ai"
-                        className="flex items-center gap-1"
-                      >
-                        Image to Text{" "}
-                        <span className="flex items-center">
-                          (
-                          <Sparkles className="shrink-0 size-3 text-purple-500" />{" "}
-                          AI)
-                        </span>
-                        <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
-                          2 credits
-                        </span>
-                      </SelectItem>
-                      <SelectItem
-                        value="code"
-                        className="flex items-center gap-1"
-                      >
-                        Image to Code{" "}
-                        <span className="flex items-center">
-                          (
-                          <Sparkles className="shrink-0 size-3 text-purple-500" />{" "}
-                          AI)
-                        </span>
-                        <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
-                          3 credits
-                        </span>
+                      <SelectItem value="hin" disabled>
+                        Hindi - Not Supported
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Note: Only English is supported for OCR.Space conversions.
+                  </p>
                 </div>
-                {conversionType === "text" && (
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Language
-                    </label>
-                    <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent className="w-full">
-                        <SelectItem value="eng">English</SelectItem>
-                        <SelectItem value="ben">Bangla (Bengali)</SelectItem>
-                        <SelectItem value="hin">Hindi</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+              )}
 
-                {!isSignedIn && conversionType !== "text" ? (
-                  <SignInButton mode="modal">
-                    <Button
-                      variant="link"
-                      className="mt-1 h-auto p-0 text-blue-500 w-full"
-                    >
-                      Sign In to Continue
-                    </Button>
-                  </SignInButton>
-                ) : (
+              {!isSignedIn &&
+              (conversionType === "text-ai" || conversionType === "code") ? (
+                <SignInButton mode="modal">
                   <Button
-                    onClick={handleConvert}
-                    disabled={
-                      !selectedFile ||
-                      (!isSignedIn &&
-                        freeConversions >= 3 &&
-                        conversionType === "text") ||
-                      (isSignedIn &&
-                        (credits === null ||
-                          (conversionType === "code" && credits < 3) ||
-                          (conversionType === "text-ai" && credits < 2)))
-                    }
-                    className="w-full bg-blue-500 hover:bg-blue-600 transition-transform duration-200 hover:scale-105"
+                    variant="link"
+                    className="mt-1 h-auto p-0 text-blue-500 w-full"
                   >
-                    {isLoading ? "Converting..." : "Convert"}
+                    Sign In to Continue
                   </Button>
-                )}
+                </SignInButton>
+              ) : (
+                <Button
+                  onClick={handleConvert}
+                  disabled={
+                    !selectedFile ||
+                    (!isSignedIn &&
+                      freeConversions >= 3 &&
+                      (conversionType === "text" ||
+                        conversionType === "pdf-to-text")) ||
+                    (isSignedIn &&
+                      (credits === null ||
+                        (conversionType === "pdf-to-text" && credits < 3) || // 3 credits for PDF-to-text
+                        (conversionType === "code" && credits < 3) ||
+                        (conversionType === "text-ai" && credits < 2) ||
+                        (conversionType === "text" && credits < 1)))
+                  }
+                  className="w-full bg-blue-500 hover:bg-blue-600 transition-transform duration-200 hover:scale-105"
+                >
+                  {isLoading ? "Converting..." : "Convert"}
+                </Button>
+              )}
 
-                {!isSignedIn && (
-                  <div className="mt-4 text-center">
-                    <p className="text-sm font-medium">
-                      Free Tesseract Conversions Left: {3 - freeConversions}/3
-                    </p>
-                    {freeConversions >= 3 && (
-                      <SignInButton mode="modal">
-                        <Button
-                          variant="link"
-                          className="mt-1 h-auto p-0 text-blue-500"
-                        >
-                          Sign In to Continue
-                        </Button>
-                      </SignInButton>
-                    )}
-                  </div>
-                )}
+              {!isSignedIn && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm font-medium">
+                    Free Conversions Left: {3 - freeConversions}/3
+                  </p>
+                  {freeConversions >= 3 && (
+                    <SignInButton mode="modal">
+                      <Button
+                        variant="link"
+                        className="mt-1 h-auto p-0 text-blue-500"
+                      >
+                        Sign In to Continue
+                      </Button>
+                    </SignInButton>
+                  )}
+                </div>
+              )}
 
-                {isSignedIn && (
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      Credits: {credits === null ? "Loading..." : credits}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBuyCredits}
-                      className="text-green-500 border-green-500 hover:bg-green-50 hover:text-green-600 transition-transform duration-200 hover:scale-105"
-                    >
-                      Buy Credits
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {result && (
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Conversion Result</CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={copyToClipboard}
-                className="transition-all duration-200 hover:scale-105"
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-                <span className="sr-only">Copy to clipboard</span>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div
-                className={cn(
-                  "max-h-[400px] overflow-auto rounded-md p-4",
-                  conversionType === "code"
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-black"
-                )}
-              >
-                {isCodeDetected ? (
-                  <SyntaxHighlighter
-                    language={getCodeLanguage(result)}
-                    style={vscDarkPlus}
-                    customStyle={{
-                      background: "transparent",
-                      padding: 0,
-                      margin: 0,
-                    }}
+              {isSignedIn && (
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-sm font-medium">
+                    Credits: {credits === null ? "Loading..." : credits}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBuyCredits}
+                    className="text-green-500 border-green-500 hover:bg-green-50 hover:text-green-600 transition-transform duration-200 hover:scale-105"
                   >
-                    {result}
-                  </SyntaxHighlighter>
-                ) : (
-                  <p>{result}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    Buy Credits
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </Suspense>
+
+      {result && (
+        <Card className="mb-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Conversion Result</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={copyToClipboard}
+              className="transition-all duration-200 hover:scale-105"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <span className="sr-only">Copy to clipboard</span>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div
+              className={cn(
+                "max-h-[400px] overflow-auto rounded-md p-4",
+                conversionType === "code"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-black"
+              )}
+            >
+              {isCodeDetected ? (
+                <SyntaxHighlighter
+                  language={getCodeLanguage(result)}
+                  style={vscDarkPlus}
+                  customStyle={{
+                    background: "transparent",
+                    padding: 0,
+                    margin: 0,
+                  }}
+                >
+                  {result}
+                </SyntaxHighlighter>
+              ) : (
+                <p>{result}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
