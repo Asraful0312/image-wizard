@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SignOutButton, useUser } from "@clerk/nextjs";
+import Loader from "./Loader";
 
 type ProfileData = {
   email: string;
@@ -32,6 +33,7 @@ export function ProfilePage() {
   const { isSignedIn } = useUser();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -42,15 +44,21 @@ export function ProfilePage() {
   }, [isSignedIn]);
 
   const fetchProfile = async () => {
+    setIsError(false);
     try {
       const res = await fetch("/api/profile");
-      if (!res.ok) throw new Error("Failed to fetch profile");
+      if (!res.ok) {
+        setIsError(true);
+        throw new Error("Failed to fetch profile");
+      }
       const data = await res.json();
       setProfileData(data);
     } catch (error) {
+      setIsError(true);
       console.error("Profile fetch error:", error);
     } finally {
       setLoading(false);
+      setIsError(false);
     }
   };
 
@@ -90,8 +98,9 @@ export function ProfilePage() {
     );
   }
 
-  if (loading) return <div>Loading...</div>;
-  if (!profileData) return <div>Error loading profile data</div>;
+  if (loading) return <Loader />;
+  if (!loading && isError && !profileData)
+    return <div>Error loading profile data</div>;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -105,22 +114,22 @@ export function ProfilePage() {
           <CardContent>
             <div className="flex flex-col items-center">
               <div className="mb-4 text-center">
-                <p className="text-3xl font-bold">{profileData.credits}</p>
+                <p className="text-3xl font-bold">{profileData?.credits}</p>
                 <p className="text-sm text-gray-500">Available Credits</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                <p>{profileData.email}</p>
+                <p>{profileData?.email}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Plan</h3>
@@ -130,7 +139,11 @@ export function ProfilePage() {
                 <h3 className="text-sm font-medium text-gray-500">
                   Member Since
                 </h3>
-                <p>{new Date(profileData.memberSince).toLocaleDateString()}</p>
+                {profileData?.memberSince && (
+                  <p>
+                    {new Date(profileData?.memberSince).toLocaleDateString()}
+                  </p>
+                )}
               </div>
               <SignOutButton>
                 <Button
@@ -146,11 +159,11 @@ export function ProfilePage() {
         </Card>
       </div>
 
-      <Card className="mt-6">
+      <Card className="mt-6 w-full">
         <CardHeader>
           <CardTitle>Buy Credits</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full">
           <Button
             onClick={handleBuyCredits}
             className="bg-green-500 hover:bg-green-600 transition-transform duration-200 hover:scale-105"
@@ -161,17 +174,17 @@ export function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
+      <Card className="mt-6 w-full">
         <CardHeader>
           <CardTitle>Purchase History</CardTitle>
         </CardHeader>
-        <CardContent>
-          {profileData.purchases.length === 0 ? (
+        <CardContent className="w-full">
+          {profileData?.purchases.length === 0 ? (
             <p>No purchase history available.</p>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="overflow-x-auto">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -181,7 +194,7 @@ export function ProfilePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {profileData.purchases.map((item) => (
+                    {profileData?.purchases.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
                           {new Date(item.date).toLocaleDateString()}
@@ -194,27 +207,7 @@ export function ProfilePage() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="mt-6 grid gap-4 md:hidden">
-                {profileData.purchases.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between border-b pb-4"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {new Date(item.date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {item.credits} Credits
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Package: {item.variant || "Unknown"}
-                      </p>
-                    </div>
-                    <p className="font-medium">${item.amount.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
+           
             </>
           )}
         </CardContent>

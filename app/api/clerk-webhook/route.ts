@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         await prisma.user.create({
           data: {
             clerkId,
-            credits: 5, // 5 free credits on registration
+            credits: 10, // 10 free credits on registration
             // Optionally store email if your schema supports it
           },
         });

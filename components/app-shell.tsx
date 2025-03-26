@@ -303,7 +303,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 w-full md:p-6">{children}</main>
       </div>
     </div>
   );

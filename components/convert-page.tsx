@@ -16,9 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { cn } from "@/lib/utils";
+import { cn, getCodeLanguage } from "@/lib/utils";
 import { toast } from "sonner";
 import { convertImageToText } from "@/actions";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 export function ConvertPage() {
   const searchParams = useSearchParams();
@@ -26,6 +29,9 @@ export function ConvertPage() {
 
   const { isSignedIn, user } = useUser();
   const [freeConversions, setFreeConversions] = useState(0);
+  const [contentType, setContentType] = useState<"plain" | "markdown" | "code">(
+    "plain"
+  );
   const [credits, setCredits] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [conversionType, setConversionType] = useState<string>(
@@ -33,9 +39,15 @@ export function ConvertPage() {
   );
   const [language, setLanguage] = useState<string>("eng");
   const [result, setResult] = useState<string | null>(null);
-  const [isCodeDetected, setIsCodeDetected] = useState(false);
+
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeParam) {
+      setConversionType(typeParam);
+    }
+  }, [typeParam]);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -83,12 +95,12 @@ export function ConvertPage() {
     if (isSignedIn) {
       const creditsRequired =
         conversionType === "pdf-to-text"
-          ? 3 // 3 credits for PDF-to-text
+          ? 3
           : conversionType === "code"
           ? 3
           : conversionType === "text-ai"
           ? 2
-          : 1; // 1 for text, 2 for text-ai, 3 for code
+          : 1;
       if (credits === null || credits < creditsRequired) {
         alert("Insufficient credits or credits not loaded");
         return;
@@ -97,14 +109,13 @@ export function ConvertPage() {
 
     setIsLoading(true);
     try {
-      // Convert the file to a base64 string to pass to the Server Action
       const buffer = await selectedFile.arrayBuffer();
       const base64File = `data:${selectedFile.type};base64,${Buffer.from(
         buffer
       ).toString("base64")}`;
 
-      // Call the Server Action
-      const { text, error } = await convertImageToText({
+      // Call the updated Server Action
+      const { formattedText, contentType, error } = await convertImageToText({
         file: base64File,
         type: conversionType,
         language,
@@ -112,12 +123,13 @@ export function ConvertPage() {
       });
 
       if (error) {
+        toast.error(error);
         throw new Error(error);
       }
 
-      const isCode = conversionType === "code" || detectCode(text as string);
-      setIsCodeDetected(isCode);
-      setResult(text);
+      // Store the formatted text and content type
+      setResult(formattedText);
+      setContentType(contentType); // You'll need to add a new state for contentType
 
       if (
         !isSignedIn &&
@@ -129,12 +141,12 @@ export function ConvertPage() {
       } else if (isSignedIn) {
         const creditsDeducted =
           conversionType === "pdf-to-text"
-            ? 3 // 3 credits for PDF-to-text
+            ? 3
             : conversionType === "code"
             ? 3
             : conversionType === "text-ai"
             ? 2
-            : 1; // 1 for text, 2 for text-ai, 3 for code
+            : 1;
         setCredits((prev) => (prev !== null ? prev - creditsDeducted : 0));
         const creditsRes = await fetch("/api/user/credits");
         const creditsData = await creditsRes.json();
@@ -157,25 +169,6 @@ export function ConvertPage() {
     }
   };
 
-  const detectCode = (text: string) => {
-    const codePatterns = [
-      /function\s+\w+\s*\(/,
-      /class\s+\w+/,
-      /<\w+.*>/,
-      /{\s*[\w-]+\s*:\s*[^;]+;?\s*}/,
-      /(if|for|while)\s*\(/,
-    ];
-    return codePatterns.some((pattern) => pattern.test(text));
-  };
-
-  const getCodeLanguage = (text: string) => {
-    if (text.includes("<") && text.includes(">")) return "html";
-    if (text.includes("{") && text.includes(":")) return "css";
-    if (text.includes("function") || text.includes("class"))
-      return "javascript";
-    return "plaintext";
-  };
-
   const handleBuyCredits = async () => {
     try {
       const res = await fetch("/api/checkout", {
@@ -184,7 +177,7 @@ export function ConvertPage() {
         body: JSON.stringify({}),
       });
       const { checkoutUrl } = await res.json();
-      window.location.href = checkoutUrl;
+      window.open(checkoutUrl, "_blank");
     } catch (error) {
       console.error("Checkout error:", error);
       alert("Failed to initiate credit purchase");
@@ -199,11 +192,11 @@ export function ConvertPage() {
         <div>
           <FileUpload onFileSelected={handleFileSelected} />
         </div>
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Conversion Settings</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium">
@@ -244,7 +237,7 @@ export function ConvertPage() {
                         AI)
                       </span>
                       <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
-                        2 credits (Gemini)
+                        2 credits
                       </span>
                     </SelectItem>
                     <SelectItem
@@ -258,7 +251,7 @@ export function ConvertPage() {
                         AI)
                       </span>
                       <span className="rounded-full bg-yellow-100 text-xs py-0.5 px-2">
-                        3 credits (Gemini)
+                        3 credits
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -382,12 +375,12 @@ export function ConvertPage() {
             <div
               className={cn(
                 "max-h-[400px] overflow-auto rounded-md p-4",
-                conversionType === "code"
+                contentType === "code"
                   ? "bg-gray-900 text-white"
                   : "bg-gray-100 text-black"
               )}
             >
-              {isCodeDetected ? (
+              {contentType === "code" ? (
                 <SyntaxHighlighter
                   language={getCodeLanguage(result)}
                   style={vscDarkPlus}
@@ -399,6 +392,15 @@ export function ConvertPage() {
                 >
                   {result}
                 </SyntaxHighlighter>
+              ) : contentType === "markdown" ? (
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                  >
+                    {result}
+                  </ReactMarkdown>
+                </div>
               ) : (
                 <p>{result}</p>
               )}
