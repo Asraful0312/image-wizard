@@ -185,10 +185,10 @@ export function ConvertPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto w-full max-w-5xl">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">Convert Your File</h1>
 
-      <div className="mb-6 grid gap-6 md:grid-cols-[2fr_1fr]">
+      <div className="mb-6 grid gap-6 w-full md:grid-cols-[2fr_1fr]">
         <div>
           <FileUpload onFileSelected={handleFileSelected} />
         </div>
@@ -354,7 +354,7 @@ export function ConvertPage() {
       </div>
 
       {result && (
-        <Card className="mb-6">
+        <Card className="mb-6 w-full">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Conversion Result</CardTitle>
             <Button
@@ -371,10 +371,10 @@ export function ConvertPage() {
               <span className="sr-only">Copy to clipboard</span>
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div
               className={cn(
-                "max-h-[400px] overflow-auto rounded-md p-4",
+                "max-h-[400px] overflow-auto rounded-md p-4 w-full",
                 contentType === "code"
                   ? "bg-gray-900 text-white"
                   : "bg-gray-100 text-black"
