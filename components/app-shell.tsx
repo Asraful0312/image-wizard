@@ -13,6 +13,8 @@ import {
   Code,
   History,
   User,
+  Tag,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -29,40 +31,35 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./ui/sidebar";
+import { useQuery } from "@tanstack/react-query";
+
+const fetchCredits = async () => {
+  const res = await fetch("/api/user/credits");
+  if (!res.ok) throw new Error("Failed to fetch credits");
+  const data = await res.json();
+  return data.credits ?? 0;
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { userId } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
-  const [credits, setCredits] = useState<number | null>(null);
+
   const [freeConversions, setFreeConversions] = useState(0);
+  const { data: credits = 0, isLoading } = useQuery({
+    queryKey: ["userCredits"],
+    queryFn: fetchCredits,
+    enabled: isSignedIn && !!user, // Only run when signed in
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   useEffect(() => {
     if (!isSignedIn) {
       const stored = parseInt(localStorage.getItem("freeConversions") || "0");
       setFreeConversions(stored);
-      setCredits(0);
     }
   }, [isSignedIn]);
-
-  useEffect(() => {
-    if (isSignedIn && user) {
-      const fetchCredits = async () => {
-        try {
-          const res = await fetch("/api/user/credits");
-          if (!res.ok) throw new Error("Failed to fetch credits");
-          const data = await res.json();
-          setCredits(data.credits ?? 0);
-        } catch (error) {
-          console.error("Fetch credits error:", error);
-          alert("Failed to load your credits");
-          setCredits(0);
-        }
-      };
-      fetchCredits();
-    }
-  }, [isSignedIn, user]);
 
   return (
     <div className="flex min-h-screen flex-col w-full">
@@ -106,6 +103,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }`}
             >
               Profile
+            </Link>
+            <Link
+              href="/coupon"
+              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
+                pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
+              }`}
+            >
+              Coupon
             </Link>
           </nav>
           <div>
@@ -198,6 +203,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/coupon"}
+                    >
+                      <Link href="/coupon">
+                        <Tag className="mr-2 h-4 w-4" />
+                        <span>Coupon</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -206,7 +222,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="p-4">
               {userId ? (
                 <div className="text-sm text-gray-600">
-                  <p>Credits: {credits === null ? "Loading..." : credits}</p>
+                  <p className="flex items-center">
+                    Credits:{" "}
+                    {isLoading ? (
+                      <Loader2 className="size-4 shrink-0 animate-spin" />
+                    ) : (
+                      credits
+                    )}
+                  </p>
                 </div>
               ) : (
                 <div className="text-sm text-gray-600">
@@ -272,6 +295,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     <User className="h-4 w-4" />
                     Profile
+                  </Link>
+                  <Link
+                    href="/coupon"
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
+                      pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Tag className="h-4 w-4" />
+                    Coupon
                   </Link>
                 </nav>
                 <div className="mt-4 border-t pt-4">

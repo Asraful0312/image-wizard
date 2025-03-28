@@ -1,4 +1,3 @@
-// app/ConvertPageContent.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -22,26 +21,43 @@ import { convertImageToText } from "@/actions";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import Image from "next/image";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+async function fetchCredits() {
+  const res = await fetch("/api/user/credits");
+  if (!res.ok) throw new Error("Failed to fetch credits");
+  const data = await res.json();
+  return data.credits ?? 0;
+}
 
 export function ConvertPage() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
 
   const { isSignedIn, user } = useUser();
+  const queryClient = useQueryClient();
+
   const [freeConversions, setFreeConversions] = useState(0);
   const [contentType, setContentType] = useState<"plain" | "markdown" | "code">(
     "plain"
   );
-  const [credits, setCredits] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [conversionType, setConversionType] = useState<string>(
     typeParam || "text"
   );
   const [language, setLanguage] = useState<string>("eng");
   const [result, setResult] = useState<string | null>(null);
-
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch credits with React Query
+  const { data: credits, isLoading: creditsLoading } = useQuery({
+    queryKey: ["userCredits"],
+    queryFn: fetchCredits,
+    enabled: isSignedIn && !!user, // Only fetch if signed in
+    initialData: isSignedIn ? null : 0, // Default to 0 if not signed in
+  });
 
   useEffect(() => {
     if (typeParam) {
@@ -53,27 +69,8 @@ export function ConvertPage() {
     if (!isSignedIn) {
       const stored = parseInt(localStorage.getItem("freeConversions") || "0");
       setFreeConversions(stored);
-      setCredits(0);
     }
   }, [isSignedIn]);
-
-  useEffect(() => {
-    if (isSignedIn && user) {
-      const fetchCredits = async () => {
-        try {
-          const res = await fetch("/api/user/credits");
-          if (!res.ok) throw new Error("Failed to fetch credits");
-          const data = await res.json();
-          setCredits(data.credits ?? 0);
-        } catch (error) {
-          console.error("Fetch credits error:", error);
-          alert("Failed to load your credits");
-          setCredits(0);
-        }
-      };
-      fetchCredits();
-    }
-  }, [isSignedIn, user]);
 
   const handleFileSelected = (file: File) => {
     setSelectedFile(file);
@@ -114,7 +111,6 @@ export function ConvertPage() {
         buffer
       ).toString("base64")}`;
 
-      // Call the updated Server Action
       const { formattedText, contentType, error } = await convertImageToText({
         file: base64File,
         type: conversionType,
@@ -123,13 +119,12 @@ export function ConvertPage() {
       });
 
       if (error) {
-        toast.error(error);
         throw new Error(error);
       }
 
-      // Store the formatted text and content type
       setResult(formattedText);
-      setContentType(contentType); // You'll need to add a new state for contentType
+      setContentType(contentType);
+      toast.success("Conversion successful");
 
       if (
         !isSignedIn &&
@@ -139,25 +134,14 @@ export function ConvertPage() {
         setFreeConversions(newCount);
         localStorage.setItem("freeConversions", newCount.toString());
       } else if (isSignedIn) {
-        const creditsDeducted =
-          conversionType === "pdf-to-text"
-            ? 3
-            : conversionType === "code"
-            ? 3
-            : conversionType === "text-ai"
-            ? 2
-            : 1;
-        setCredits((prev) => (prev !== null ? prev - creditsDeducted : 0));
-        const creditsRes = await fetch("/api/user/credits");
-        const creditsData = await creditsRes.json();
-        setCredits(creditsData.credits ?? 0);
+        // Refetch credits after conversion
+        await queryClient.invalidateQueries({ queryKey: ["userCredits"] });
       }
     } catch (error) {
       console.error("Conversion error:", error);
       toast.error("An error occurred during conversion");
     } finally {
       setIsLoading(false);
-      toast.success("File converted successfully");
     }
   };
 
@@ -304,7 +288,8 @@ export function ConvertPage() {
                         conversionType === "pdf-to-text")) ||
                     (isSignedIn &&
                       (credits === null ||
-                        (conversionType === "pdf-to-text" && credits < 3) || // 3 credits for PDF-to-text
+                        credits === undefined ||
+                        (conversionType === "pdf-to-text" && credits < 3) ||
                         (conversionType === "code" && credits < 3) ||
                         (conversionType === "text-ai" && credits < 2) ||
                         (conversionType === "text" && credits < 1)))
@@ -336,7 +321,8 @@ export function ConvertPage() {
               {isSignedIn && (
                 <div className="mt-4 flex items-center justify-between">
                   <p className="text-sm font-medium">
-                    Credits: {credits === null ? "Loading..." : credits}
+                    Credits:{" "}
+                    {creditsLoading ? "Loading..." : credits ?? "Not loaded"}
                   </p>
                   <Button
                     variant="outline"
@@ -353,7 +339,21 @@ export function ConvertPage() {
         </Card>
       </div>
 
-      {result && (
+      {isLoading && (
+        <Card className="mb-6 w-full">
+          <CardContent className="w-full flex items-center justify-center">
+            <Image
+              src="/loading.gif"
+              alt="loading"
+              width={150}
+              height={150}
+              className="shrink-0 object-cover"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && result && (
         <Card className="mb-6 w-full">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Conversion Result</CardTitle>

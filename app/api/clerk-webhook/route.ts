@@ -1,3 +1,4 @@
+// app/api/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Webhook } from "svix";
@@ -40,11 +41,15 @@ export async function POST(req: NextRequest) {
       "svix-id": headers.get("svix-id") || "",
       "svix-timestamp": headers.get("svix-timestamp") || "",
       "svix-signature": headers.get("svix-signature") || "",
-    }) as { type: string; data: { id: string } };
+    }) as {
+      type: string;
+      data: { id: string; email_addresses?: { email_address: string }[] };
+    };
 
     // Handle user.created event
     if (payload.type === "user.created") {
-      const { id: clerkId } = payload.data;
+      const { id: clerkId, email_addresses } = payload.data;
+      const email = email_addresses?.[0]?.email_address; // Extract the primary email
 
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({
@@ -55,11 +60,11 @@ export async function POST(req: NextRequest) {
         await prisma.user.create({
           data: {
             clerkId,
+            email, // Store the email
             credits: 10, // 10 free credits on registration
-            // Optionally store email if your schema supports it
           },
         });
-        console.log(`Created user with clerkId: ${clerkId}`);
+        console.log(`Created user with clerkId: ${clerkId}, email: ${email}`);
       }
     }
 
