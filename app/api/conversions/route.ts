@@ -4,24 +4,18 @@ import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
-type ConversationType = {
-  id: string;
-  createdAt: Date;
-  type: string;
-  inputUrl: string;
-  output: string;
-};
-
 export async function GET(req: NextRequest) {
-  const { userId: clerkId } = getAuth(req); // Clerk ID
-  console.log("Clerk ID:", clerkId);
+  const { userId: clerkId } = getAuth(req);
 
   if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
+
   try {
-    // Find the User record by clerkId to get the Prisma User.id
     const user = await prisma.user.findUnique({
       where: { clerkId },
     });
@@ -30,31 +24,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const prismaUserId = user.id; // This is the UUID stored in Conversion.userId
-    console.log("Prisma User ID:", prismaUserId);
+    const skip = (page - 1) * pageSize;
 
-    const conversions = await prisma.conversion.findMany({
-      where: { userId: prismaUserId }, // Use the UUID, not the Clerk ID
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        type: true,
-        inputUrl: true,
-        output: true,
-        createdAt: true,
-      },
-    });
-
-    console.log("Conversions:", conversions);
+    const [conversions, total] = await Promise.all([
+      prisma.conversion.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          type: true,
+          inputUrl: true,
+          output: true,
+          createdAt: true,
+        },
+      }),
+      prisma.conversion.count({
+        where: { userId: user.id },
+      }),
+    ]);
 
     return NextResponse.json({
-      conversions: conversions.map((c: ConversationType) => ({
+      conversions: conversions.map((c) => ({
         id: c.id,
         date: c.createdAt.toISOString(),
-        type: c.type,
+        type: c.type as "text" | "code",
         inputUrl: c.inputUrl,
         output: c.output,
       })),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
     });
   } catch (error) {
     console.error("Fetch conversions error:", error);

@@ -21,7 +21,6 @@ import { convertImageToText } from "@/actions";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 async function fetchCredits() {
@@ -263,6 +262,7 @@ export function ConvertPage() {
                   </Select>
                   <p className="mt-1 text-xs text-gray-500">
                     Note: Only English is supported for OCR.Space conversions.
+                    use AI model for more accurate conversions.
                   </p>
                 </div>
               )}
@@ -338,20 +338,6 @@ export function ConvertPage() {
           </CardContent>
         </Card>
       </div>
-
-      {isLoading && (
-        <Card className="mb-6 w-full">
-          <CardContent className="w-full flex items-center justify-center">
-            <Image
-              src="/loading.gif"
-              alt="loading"
-              width={150}
-              height={150}
-              className="shrink-0 object-cover"
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {!isLoading && result && (
         <Card className="mb-6 w-full">

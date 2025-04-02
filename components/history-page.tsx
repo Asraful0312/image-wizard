@@ -1,9 +1,10 @@
 // app/HistoryPage.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Eye, FileText, Code } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/nextjs";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -25,40 +26,46 @@ import Image from "next/image";
 
 interface Conversion {
   id: string;
-  date: string; // ISO string from database
+  date: string;
   type: "text" | "code";
-  inputUrl: string; // URL of the uploaded image
+  inputUrl: string;
   output: string;
+}
+
+// Define the API response type
+interface ConversionsResponse {
+  conversions: Conversion[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+async function fetchConversions(
+  page: number,
+  pageSize: number
+): Promise<ConversionsResponse> {
+  const response = await fetch(
+    `/api/conversions?page=${page}&pageSize=${pageSize}`
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch conversions");
+  }
+  return response.json();
 }
 
 export function HistoryPage() {
   const { isSignedIn, user } = useUser();
-  const [history, setHistory] = useState<Conversion[]>([]);
   const [selectedItem, setSelectedItem] = useState<Conversion | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  // Fetch conversion history when authenticated
-  useEffect(() => {
-    if (isSignedIn && user) {
-      const fetchHistory = async () => {
-        try {
-          setIsLoading(true);
-          const res = await fetch("/api/conversions");
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Failed to fetch history");
-          setHistory(data.conversions);
-        } catch (error) {
-          console.error("Fetch history error:", error);
-          alert("Failed to load conversion history");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchHistory();
-    } else {
-      setIsLoading(false);
-    }
-  }, [isSignedIn, user]);
+  const { data, isLoading, error } = useQuery<ConversionsResponse, Error>({
+    queryKey: ["conversions", page],
+    queryFn: () => fetchConversions(page, pageSize),
+    enabled: isSignedIn && !!user,
+    placeholderData: keepPreviousData, // Updated for v5
+  });
 
   if (!isSignedIn) {
     return (
@@ -93,13 +100,16 @@ export function HistoryPage() {
         <CardContent className="w-full">
           {isLoading ? (
             <p className="text-center text-gray-500">Loading history...</p>
-          ) : history.length === 0 ? (
+          ) : error ? (
+            <p className="text-center text-red-500">
+              Failed to load history: {error.message}
+            </p>
+          ) : !data?.conversions?.length ? (
             <p className="text-center text-gray-500">No conversions yet.</p>
           ) : (
             <>
-              {/* Table view for larger screens */}
-              <div className=" overflow-x-auto">
-                <Table className="overflow-x-auto">
+              <div className="overflow-x-auto">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
@@ -115,8 +125,8 @@ export function HistoryPage() {
                       </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="overflow-x-auto">
-                    {history.map((item) => (
+                  <TableBody>
+                    {data.conversions.map((item: Conversion) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium whitespace-nowrap">
                           {new Date(item.date).toLocaleDateString()}
@@ -156,7 +166,7 @@ export function HistoryPage() {
                                 <span className="sr-only">View details</span>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl ">
+                            <DialogContent className="max-w-3xl">
                               <DialogHeader>
                                 <DialogTitle>Conversion Details</DialogTitle>
                               </DialogHeader>
@@ -220,6 +230,25 @@ export function HistoryPage() {
                   </TableBody>
                 </Table>
               </div>
+              {data.totalPages > 1 && (
+                <div className="mt-4 flex justify-between items-center">
+                  <Button
+                    disabled={page === 1}
+                    onClick={() => setPage((prev) => prev - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span>
+                    Page {data.page} of {data.totalPages}
+                  </span>
+                  <Button
+                    disabled={page === data.totalPages}
+                    onClick={() => setPage((prev) => prev + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </CardContent>

@@ -22,8 +22,10 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function CouponPage() {
+  const queryClient = useQueryClient();
   const { isSignedIn, isLoaded } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,7 @@ export function CouponPage() {
           title: "Success",
           message: `Coupon redeemed! You received ${data.credits} credits.`,
         });
+        await queryClient.invalidateQueries({ queryKey: ["userCredits"] });
       } else {
         setAlert({ title: "Error", message: "Failed to redeem coupon." });
       }

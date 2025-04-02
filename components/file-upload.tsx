@@ -76,10 +76,10 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
 
   return (
     <Card className="w-full">
-      <CardContent className="p-6">
+      <CardContent className="p-6 w-full">
         {!selectedFile ? (
           <div
-            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
+            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors w-full ${
               dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
             }`}
             onDragEnter={handleDrag}
@@ -109,8 +109,8 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
             />
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="relative rounded-lg border overflow-hidden">
+          <div className="space-y-4 w-fit">
+            <div className="relative rounded-lg border overflow-hidden w-full">
               {selectedFile.type.startsWith("image/") ? (
                 <Image
                   src={preview || ""}
