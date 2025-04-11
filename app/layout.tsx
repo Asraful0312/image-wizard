@@ -9,13 +9,14 @@ import Provider from "@/components/provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "ImageToTextNow - Image Conversion Made Easy",
-  description: "Free Convert images to text or code with our powerful AI tools",
+  title: "Free images to text or code conversions",
+  description: "Convert images to text or code with our powerful AI tools",
   keywords:
     "image conversion, AI tools, image to text, image to code, ImageToTextNow",
   openGraph: {
-    title: "ImageToTextNow - Image Conversion Made Easy",
+    title: "Free images to text or code conversions",
     description: "Convert images to text or code with our powerful AI tools",
+    siteName: "Free images to text or code conversions",
     url: process.env.NEXT_PUBLIC_URL, // Replace with your domain
     type: "website",
     images: [
@@ -60,7 +61,10 @@ export default function RootLayout({
                 }),
               }}
             />
-            <meta name="google-site-verification" content="sX4zMfEvkW61LuTRt8qj5nkXHP5woMXgX4X7YozlBoo" />
+            <meta
+              name="google-site-verification"
+              content="sX4zMfEvkW61LuTRt8qj5nkXHP5woMXgX4X7YozlBoo"
+            />
           </head>
           <body className={`${inter.className} min-h-screen bg-[#F9FAFB]`}>
             <SidebarProvider>{children}</SidebarProvider>
