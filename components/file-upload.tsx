@@ -110,7 +110,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
           </div>
         ) : (
           <div className="space-y-4 w-fit">
-            <div className="relative rounded-lg border overflow-hidden w-full">
+            <div className="relative rounded-lg border overflow-hidden flex flex-col items-center justify-center w-full">
               {selectedFile.type.startsWith("image/") ? (
                 <Image
                   src={preview || ""}

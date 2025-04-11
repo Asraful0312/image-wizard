@@ -171,11 +171,11 @@ export function ConvertPage() {
     <div className="mx-auto w-full max-w-5xl">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">Convert Your File</h1>
 
-      <div className="mb-6 grid gap-6 w-full md:grid-cols-[2fr_1fr]">
-        <div>
+      <div className="mb-6 grid gap-6 w-full lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <FileUpload onFileSelected={handleFileSelected} />
         </div>
-        <Card className="w-full">
+        <Card className="w-full lg:col-span-1">
           <CardHeader>
             <CardTitle>Conversion Settings</CardTitle>
           </CardHeader>

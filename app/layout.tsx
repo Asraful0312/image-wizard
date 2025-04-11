@@ -9,12 +9,12 @@ import Provider from "@/components/provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "ImageWizard - Image Conversion Made Easy",
-  description: "Convert images to text or code with our powerful AI tools",
+  title: "ImageToTextNow - Image Conversion Made Easy",
+  description: "Free Convert images to text or code with our powerful AI tools",
   keywords:
-    "image conversion, AI tools, image to text, image to code, ImageWizard",
+    "image conversion, AI tools, image to text, image to code, ImageToTextNow",
   openGraph: {
-    title: "ImageWizard - Image Conversion Made Easy",
+    title: "ImageToTextNow - Image Conversion Made Easy",
     description: "Convert images to text or code with our powerful AI tools",
     url: process.env.NEXT_PUBLIC_URL, // Replace with your domain
     type: "website",
@@ -23,7 +23,7 @@ export const metadata = {
         url: `${process.env.NEXT_PUBLIC_URL}/og-image.jpg`, // Add an OG image
         width: 1200,
         height: 630,
-        alt: "ImageWizard Preview",
+        alt: "ImageToTextNow Preview",
       },
     ],
   },
@@ -50,7 +50,7 @@ export default function RootLayout({
                 __html: JSON.stringify({
                   "@context": "https://schema.org",
                   "@type": "WebSite",
-                  name: "ImageWizard",
+                  name: "ImageToTextNow",
                   url: `${process.env.NEXT_PUBLIC_URL}`,
                   potentialAction: {
                     "@type": "SearchAction",
@@ -60,6 +60,7 @@ export default function RootLayout({
                 }),
               }}
             />
+            <meta name="google-site-verification" content="sX4zMfEvkW61LuTRt8qj5nkXHP5woMXgX4X7YozlBoo" />
           </head>
           <body className={`${inter.className} min-h-screen bg-[#F9FAFB]`}>
             <SidebarProvider>{children}</SidebarProvider>

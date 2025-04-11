@@ -1,7 +1,7 @@
 // app/profile/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CreditCard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,45 +29,34 @@ type ProfileData = {
   }[];
 };
 
+async function fetchProfileData(): Promise<ProfileData> {
+  const res = await fetch("/api/profile");
+  if (!res.ok) {
+    throw new Error("Failed to fetch profile");
+  }
+  return res.json();
+}
+
 export function ProfilePage() {
   const { isSignedIn } = useUser();
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchProfile();
-    } else {
-      setLoading(false);
-    }
-  }, [isSignedIn]);
-
-  const fetchProfile = async () => {
-    setIsError(false);
-    try {
-      const res = await fetch("/api/profile");
-      if (!res.ok) {
-        setIsError(true);
-        throw new Error("Failed to fetch profile");
-      }
-      const data = await res.json();
-      setProfileData(data);
-    } catch (error) {
-      setIsError(true);
-      console.error("Profile fetch error:", error);
-    } finally {
-      setLoading(false);
-      setIsError(false);
-    }
-  };
+  const {
+    data: profileData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchProfileData,
+    enabled: isSignedIn, // Only fetch when user is signed in
+    retry: 1, // Retry once on failure
+  });
 
   const handleBuyCredits = async () => {
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // No packageId needed
+        body: JSON.stringify({}),
       });
       const { checkoutUrl } = await res.json();
       window.location.href = checkoutUrl;
@@ -98,9 +87,8 @@ export function ProfilePage() {
     );
   }
 
-  if (loading) return <Loader />;
-  if (!loading && isError && !profileData)
-    return <div>Error loading profile data</div>;
+  if (isLoading) return <Loader />;
+  if (isError) return <div>Error loading profile data</div>;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -182,33 +170,30 @@ export function ProfilePage() {
           {profileData?.purchases.length === 0 ? (
             <p>No purchase history available.</p>
           ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table className="overflow-x-auto">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Credits Bought</TableHead>
-                      <TableHead>Amount Paid</TableHead>
-                      <TableHead>Package</TableHead>
+            <div className="overflow-x-auto">
+              <Table className="overflow-x-auto">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Credits Bought</TableHead>
+                    <TableHead>Amount Paid</TableHead>
+                    <TableHead>Package</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profileData?.purchases.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">
+                        {new Date(item.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{item.credits}</TableCell>
+                      <TableCell>${item.amount.toFixed(2)}</TableCell>
+                      <TableCell>{item.variant || "Unknown"}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profileData?.purchases.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">
-                          {new Date(item.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{item.credits}</TableCell>
-                        <TableCell>${item.amount.toFixed(2)}</TableCell>
-                        <TableCell>{item.variant || "Unknown"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-           
-            </>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
