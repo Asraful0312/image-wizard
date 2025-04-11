@@ -21,3 +21,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 }
+
+export function headers() {
+  return {
+    "Content-Type": "application/xml",
+  };
+}
