@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/remove-bg"
               className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
+                pathname === "/remove-bg" ? "text-blue-500" : "text-gray-600"
               }`}
             >
               Background Remover

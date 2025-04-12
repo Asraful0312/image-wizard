@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { SignInButton, useAuth } from "@clerk/nextjs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,9 +93,14 @@ export function CouponPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center pb-6 pt-2">
-            <Button size="lg" className="w-full">
-              Sign In
-            </Button>
+            <SignInButton mode="modal">
+              <Button
+                variant="link"
+                className="mt-1 h-auto p-0 text-blue-500 w-full"
+              >
+                Sign In to Continue
+              </Button>
+            </SignInButton>
           </CardFooter>
         </Card>
       </div>
