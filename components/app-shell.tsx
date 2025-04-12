@@ -195,7 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       asChild
                       isActive={pathname === "/remove-bg"}
                     >
-                      <Link href="/">
+                      <Link href="/remove-bg">
                         <ScissorsLineDashed className="mr-2 h-4 w-4" />
                         <span>Background Remover</span>
                       </Link>
