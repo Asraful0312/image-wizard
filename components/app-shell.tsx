@@ -15,6 +15,7 @@ import {
   User,
   Tag,
   Loader2,
+  ScissorsLineDashed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -112,6 +113,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               Coupon
             </Link>
+            <Link
+              href="/remove-bg"
+              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
+                pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
+              }`}
+            >
+              Background Remover
+            </Link>
           </nav>
           <div>
             {userId ? (
@@ -178,6 +187,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <Link href="/">
                         <ImageIcon className="mr-2 h-4 w-4" />
                         <span>Convert</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/remove-bg"}
+                    >
+                      <Link href="/">
+                        <ScissorsLineDashed className="mr-2 h-4 w-4" />
+                        <span>Background Remover</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -271,6 +291,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     <ImageIcon className="h-4 w-4" />
                     Convert
+                  </Link>
+                  <Link
+                    href="/remove-bg"
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
+                      pathname === "/remove-bg"
+                        ? "text-blue-500"
+                        : "text-gray-600"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <ScissorsLineDashed className="h-4 w-4" />
+                    Background Remover
                   </Link>
                   <Link
                     href="/history"
