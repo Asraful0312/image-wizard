@@ -151,7 +151,7 @@ export function HistoryPage() {
                           {item.output}
                         </TableCell>
                         <TableCell>
-                          <Drawer className="w-full">
+                          <Drawer >
                             <DrawerTrigger asChild>
                               <Button
                                 variant="ghost"
