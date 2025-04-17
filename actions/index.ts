@@ -1,4 +1,3 @@
-// app/actions.ts
 "use server";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -6,6 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 type ConvertImageToTextOutput = {
   text: string;
   formattedText: string;
+  translatedText?: string; // New field for translated text
   contentType: "plain" | "markdown" | "code";
   error: string | null;
 };
@@ -14,6 +14,7 @@ type ConvertImageToTextInput = {
   file: string;
   type: string;
   language: string;
+  translationLanguage?: string | null; // New optional field
   clerkId: string | null;
 };
 
@@ -70,23 +71,16 @@ function fixMarkdownLists(text: string): string {
   return fixedLines.join("\n");
 }
 
-// Utility function to strip Markdown code block markers and language identifiers
 function stripCodeBlockMarkers(text: string): string {
-  // Remove Markdown code block markers (```) and language identifiers
-  let cleaned = text
-    .replace(/^```[\w\s]*\n/, "") // Remove opening ``` with optional language identifier
-    .replace(/\n```$/, ""); // Remove closing ```
-
-  // Trim any leading/trailing whitespace
+  let cleaned = text.replace(/^```[\w\s]*\n/, "").replace(/\n```$/, "");
   cleaned = cleaned.trim();
-
   return cleaned;
 }
 
 export async function convertImageToText({
   file,
   type,
-
+  translationLanguage,
   clerkId,
 }: ConvertImageToTextInput): Promise<ConvertImageToTextOutput> {
   try {
@@ -123,6 +117,7 @@ export async function convertImageToText({
 
     let text: string;
     let formattedText: string;
+    let translatedText: string | undefined;
     let contentType: "plain" | "markdown" | "code" = "plain";
 
     if (type === "text" || type === "pdf-to-text") {
@@ -171,7 +166,7 @@ export async function convertImageToText({
       const prompt =
         type === "code"
           ? "Extract the code from this image and return only the raw code text as it appears in the image, with proper indentation and syntax preserved. Do not include any Markdown formatting, code block markers (like ```), language identifiers (like ```typescript), or any additional explanations. If no code is present, return the plain text formatted as Markdown with proper headings, lists, and paragraphs."
-          : "Extract the text from this image and format it as well-structured Markdown. Use headings, lists, and paragraphs as appropriate. For key-value pairs (e.g., 'Key: Value'), format them as a Markdown list using '- **Key:** Value'. Ensure proper Markdown syntax for lists, tables, and headings. don't add anything extra like explanation etc.";
+          : "Extract the text from this image and format it as well-structured Markdown. Use headings, lists, and paragraphs as appropriate. For key-value pairs (e.g., 'Key: Value'), format them as a Markdown list using '- **Key:** Value'. Ensure proper Markdown syntax for lists, tables, and headings. Do not add any extra explanations.";
 
       const base64Data = file.split(",")[1];
       const result = await model.generateContent([
@@ -181,14 +176,34 @@ export async function convertImageToText({
 
       formattedText = result.response.text();
       if (type === "code") {
-        // Strip any Markdown code block markers or language identifiers
         formattedText = stripCodeBlockMarkers(formattedText);
       } else {
-        // Fix Markdown lists for text-ai
         formattedText = fixMarkdownLists(formattedText);
       }
       text = formattedText;
       contentType = type === "code" ? "code" : "markdown";
+
+      // Handle translation for text-ai if translationLanguage is provided
+      if (type === "text-ai" && translationLanguage) {
+        const languageMap: { [key: string]: string } = {
+          es: "Spanish",
+          fr: "French",
+          de: "German",
+          hi: "Hindi",
+          bn: "Bengali",
+          en: "English"
+        };
+        const targetLanguage = languageMap[translationLanguage];
+        if (!targetLanguage) {
+          throw new Error("Invalid translation language");
+        }
+
+        const translationPrompt = `Translate the following text to ${targetLanguage}. Return only the translated text without any additional explanations or formatting:\n\n${text}`;
+        const translationResult = await model.generateContent([
+          translationPrompt,
+        ]);
+        translatedText = translationResult.response.text().trim();
+      }
     } else {
       return {
         error:
@@ -221,7 +236,7 @@ export async function convertImageToText({
                 ? "pdf-to-text"
                 : "image-to-text",
             inputUrl: "some-cloud-url",
-            output: text,
+            output: text, // Store only the extracted text
           },
         }),
         prisma.user.update({
@@ -242,12 +257,12 @@ export async function convertImageToText({
               ? "pdf-to-text"
               : "image-to-text",
           inputUrl: "some-cloud-url",
-          output: text,
+          output: text, // Store only the extracted text
         },
       });
     }
 
-    return { text, formattedText, contentType, error: null };
+    return { text, formattedText, translatedText, contentType, error: null };
   } catch (error) {
     console.error(
       `${

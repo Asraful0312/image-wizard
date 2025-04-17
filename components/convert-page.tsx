@@ -46,16 +46,22 @@ export function ConvertPage() {
     typeParam || "text"
   );
   const [language, setLanguage] = useState<string>("eng");
-  const [result, setResult] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [translationLanguage, setTranslationLanguage] = useState<string | null>(
+    null
+  ); // New state for translation language
+  const [result, setResult] = useState<{
+    extractedText: string;
+    translatedText?: string;
+  } | null>(null); // Updated to handle both extracted and translated text
+  const [copied, setCopied] = useState<"extracted" | "translated" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch credits with React Query
   const { data: credits, isLoading: creditsLoading } = useQuery({
     queryKey: ["userCredits"],
     queryFn: fetchCredits,
-    enabled: isSignedIn && !!user, // Only fetch if signed in
-    initialData: isSignedIn ? null : 0, // Default to 0 if not signed in
+    enabled: isSignedIn && !!user,
+    initialData: isSignedIn ? null : 0,
   });
 
   useEffect(() => {
@@ -110,18 +116,25 @@ export function ConvertPage() {
         buffer
       ).toString("base64")}`;
 
-      const { formattedText, contentType, error } = await convertImageToText({
-        file: base64File,
-        type: conversionType,
-        language,
-        clerkId: user?.id || null,
-      });
+      const { formattedText, contentType, translatedText, error } =
+        await convertImageToText({
+          file: base64File,
+          type: conversionType,
+          language,
+          translationLanguage, // Pass translation language
+          clerkId: user?.id || null,
+        });
 
       if (error) {
+        console.log("error", error);
+        toast.error(error);
         throw new Error(error);
       }
 
-      setResult(formattedText);
+      setResult({
+        extractedText: formattedText,
+        translatedText: translatedText || undefined,
+      });
       setContentType(contentType);
       toast.success("Conversion successful");
 
@@ -133,22 +146,24 @@ export function ConvertPage() {
         setFreeConversions(newCount);
         localStorage.setItem("freeConversions", newCount.toString());
       } else if (isSignedIn) {
-        // Refetch credits after conversion
         await queryClient.invalidateQueries({ queryKey: ["userCredits"] });
       }
     } catch (error) {
       console.error("Conversion error:", error);
-      toast.error("An error occurred during conversion");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const copyToClipboard = () => {
+  const copyToClipboard = (type: "extracted" | "translated") => {
     if (result) {
-      navigator.clipboard.writeText(result);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const textToCopy =
+        type === "extracted" ? result.extractedText : result.translatedText;
+      if (textToCopy) {
+        navigator.clipboard.writeText(textToCopy);
+        setCopied(type);
+        setTimeout(() => setCopied(null), 2000);
+      }
     }
   };
 
@@ -169,7 +184,7 @@ export function ConvertPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Convert Your File</h1>
+      <h1 className="mb-6 text-xl md:text-2xl font-bold">Convert Your File</h1>
 
       <div className="mb-6 grid gap-6 w-full lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -187,7 +202,10 @@ export function ConvertPage() {
                 </label>
                 <Select
                   value={conversionType}
-                  onValueChange={setConversionType}
+                  onValueChange={(value) => {
+                    setConversionType(value);
+                    setTranslationLanguage(null); // Reset translation language when type changes
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select type" />
@@ -262,8 +280,34 @@ export function ConvertPage() {
                   </Select>
                   <p className="mt-1 text-xs text-gray-500">
                     Note: Only English is supported for OCR.Space conversions.
-                    use AI model for more accurate conversions.
+                    Use AI model for more accurate conversions.
                   </p>
+                </div>
+              )}
+              {conversionType === "text-ai" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Translate To (Optional)
+                  </label>
+                  <Select
+                    value={translationLanguage || "eng"}
+                    onValueChange={(value) =>
+                      setTranslationLanguage(value === "" ? 'english' : value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="No translation" />
+                    </SelectTrigger>
+                    <SelectContent className="w-full">
+                    
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="hi">Hindi</SelectItem>
+                      <SelectItem value="bn">Bengali</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -343,52 +387,89 @@ export function ConvertPage() {
         <Card className="mb-6 w-full">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Conversion Result</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={copyToClipboard}
-              className="transition-all duration-200 hover:scale-105"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              <span className="sr-only">Copy to clipboard</span>
-            </Button>
           </CardHeader>
           <CardContent className="w-full">
-            <div
-              className={cn(
-                "max-h-[400px] overflow-auto rounded-md p-4 w-full",
-                contentType === "code"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-black"
-              )}
-            >
-              {contentType === "code" ? (
-                <SyntaxHighlighter
-                  language={getCodeLanguage(result)}
-                  style={vscDarkPlus}
-                  customStyle={{
-                    background: "transparent",
-                    padding: 0,
-                    margin: 0,
-                  }}
-                >
-                  {result}
-                </SyntaxHighlighter>
-              ) : contentType === "markdown" ? (
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
+            <div className="space-y-6">
+              {/* Extracted Text */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium">Extracted Text</h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyToClipboard("extracted")}
+                    className="transition-all duration-200 hover:scale-105"
                   >
-                    {result}
-                  </ReactMarkdown>
+                    {copied === "extracted" ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">Copy extracted text</span>
+                  </Button>
                 </div>
-              ) : (
-                <p>{result}</p>
+                <div
+                  className={cn(
+                    "max-h-[400px] overflow-auto rounded-md p-4 w-full",
+                    contentType === "code"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-black"
+                  )}
+                >
+                  {contentType === "code" ? (
+                    <SyntaxHighlighter
+                      language={getCodeLanguage(result.extractedText)}
+                      style={vscDarkPlus}
+                      customStyle={{
+                        background: "transparent",
+                        padding: 0,
+                        margin: 0,
+                      }}
+                    >
+                      {result.extractedText}
+                    </SyntaxHighlighter>
+                  ) : contentType === "markdown" ? (
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                      >
+                        {result.extractedText}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p>{result.extractedText}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Translated Text (if available) */}
+              {result.translatedText && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Translated Text</h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyToClipboard("translated")}
+                      className="transition-all duration-200 hover:scale-105"
+                    >
+                      {copied === "translated" ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">Copy translated text</span>
+                    </Button>
+                  </div>
+                  <div
+                    className={cn(
+                      "max-h-[400px] overflow-auto rounded-md p-4 w-full bg-gray-100 text-black"
+                    )}
+                  >
+                    <p>{result.translatedText}</p>
+                  </div>
+                </div>
               )}
             </div>
           </CardContent>

@@ -69,6 +69,7 @@ export default function RootLayout({
           <body className={`${inter.className} min-h-screen bg-[#F9FAFB]`}>
             <SidebarProvider>{children}</SidebarProvider>
             <Toaster richColors />
+       
           </body>
         </html>
       </ClerkProvider>

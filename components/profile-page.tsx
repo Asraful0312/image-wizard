@@ -91,8 +91,8 @@ export function ProfilePage() {
   if (isError) return <div>Error loading profile data</div>;
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Your Profile</h1>
+    <div className="mx-auto max-w-6xl">
+      <h1 className="mb-6 text-xl md:text-2xl font-bold ">Your Profile</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

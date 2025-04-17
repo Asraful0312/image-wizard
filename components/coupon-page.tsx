@@ -79,7 +79,7 @@ export function CouponPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex min-h-[80vh] items-center justify-center p-4">
+      <div className="flex min-h-[80vh] items-center justify-center w-full">
         <Card className="w-full max-w-md border-2 border-muted shadow-lg">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
@@ -108,9 +108,9 @@ export function CouponPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-4">
+    <div className="mx-auto max-w-6xl p-4">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight">
           Redeem Your Coupon
         </h1>
         <p className="mt-2 text-muted-foreground">

@@ -8,12 +8,12 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Table,
   TableBody,
@@ -32,7 +32,6 @@ interface Conversion {
   output: string;
 }
 
-// Define the API response type
 interface ConversionsResponse {
   conversions: Conversion[];
   total: number;
@@ -64,7 +63,7 @@ export function HistoryPage() {
     queryKey: ["conversions", page],
     queryFn: () => fetchConversions(page, pageSize),
     enabled: isSignedIn && !!user,
-    placeholderData: keepPreviousData, // Updated for v5
+    placeholderData: keepPreviousData,
   });
 
   if (!isSignedIn) {
@@ -89,9 +88,7 @@ export function HistoryPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">
-        Conversion History
-      </h1>
+      <h1 className="mb-6 text-xl md:text-2xl font-bold">Conversion History</h1>
 
       <Card className="w-full">
         <CardHeader>
@@ -154,8 +151,8 @@ export function HistoryPage() {
                           {item.output}
                         </TableCell>
                         <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                          <Drawer className="w-full">
+                            <DrawerTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -165,13 +162,13 @@ export function HistoryPage() {
                                 <Eye className="h-4 w-4" />
                                 <span className="sr-only">View details</span>
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>Conversion Details</DialogTitle>
-                              </DialogHeader>
+                            </DrawerTrigger>
+                            <DrawerContent className="max-w-3xl mx-auto pb-6">
+                              <DrawerHeader>
+                                <DrawerTitle>Conversion Details</DrawerTitle>
+                              </DrawerHeader>
                               {selectedItem && (
-                                <div className="grid gap-4 py-4">
+                                <div className="grid gap-4 py-4 px-4">
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
                                       <h3 className="mb-2 text-sm font-medium">
@@ -222,8 +219,8 @@ export function HistoryPage() {
                                   </div>
                                 </div>
                               )}
-                            </DialogContent>
-                          </Dialog>
+                            </DrawerContent>
+                          </Drawer>
                         </TableCell>
                       </TableRow>
                     ))}

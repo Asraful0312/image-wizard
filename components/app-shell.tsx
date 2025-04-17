@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,6 +32,7 @@ import {
   SidebarMenuItem,
 } from "./ui/sidebar";
 import { useQuery } from "@tanstack/react-query";
+import Footer from "./footer";
 
 const fetchCredits = async () => {
   const res = await fetch("/api/user/credits");
@@ -51,8 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: credits = 0, isLoading } = useQuery({
     queryKey: ["userCredits"],
     queryFn: fetchCredits,
-    enabled: isSignedIn && !!user, // Only run when signed in
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: isSignedIn && !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col w-full">
-      {/* Top Navigation Bar */}
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-white inset-x-0 w-full">
         <div className="flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
@@ -77,50 +77,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <Link href="/" className="flex items-center gap-2">
               <ImageIcon className="h-6 w-6 text-blue-500" />
-              <span className="text-xl font-bold">ImageToTextNow</span>
+              <span className="text-lg md:text-xl font-bold">
+                ImageToTextNow
+              </span>
             </Link>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/" ? "text-blue-500" : "text-gray-600"
-              }`}
-            >
-              Convert
-            </Link>
-            <Link
-              href="/history"
-              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/history" ? "text-blue-500" : "text-gray-600"
-              }`}
-            >
-              History
-            </Link>
-            <Link
-              href="/profile"
-              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/profile" ? "text-blue-500" : "text-gray-600"
-              }`}
-            >
-              Profile
-            </Link>
-            <Link
-              href="/coupon"
-              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
-              }`}
-            >
-              Coupon
-            </Link>
-            <Link
-              href="/remove-bg"
-              className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                pathname === "/remove-bg" ? "text-blue-500" : "text-gray-600"
-              }`}
-            >
-              Background Remover
-            </Link>
+            {[
+              { href: "/", label: "Convert" },
+              { href: "/history", label: "History" },
+              { href: "/profile", label: "Profile" },
+              { href: "/coupon", label: "Coupon" },
+              { href: "/remove-bg", label: "Background Remover" },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`text-sm font-medium transition-colors hover:text-blue-500 ${
+                  pathname === href ? "text-blue-500" : "text-gray-600"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
           <div>
             {userId ? (
@@ -146,8 +125,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
+      {/* Main layout */}
       <div className="flex flex-1">
-        {/* Sidebar */}
+        {/* Desktop Sidebar */}
         <Sidebar variant="floating" collapsible="offcanvas">
           <SidebarHeader>
             <div className="p-2">
@@ -182,193 +162,108 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === "/"}>
-                      <Link href="/">
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        <span>Convert</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/remove-bg"}
-                    >
-                      <Link href="/remove-bg">
-                        <ScissorsLineDashed className="mr-2 h-4 w-4" />
-                        <span>Background Remover</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/history"}
-                    >
-                      <Link href="/history">
-                        <History className="mr-2 h-4 w-4" />
-                        <span>History</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/profile"}
-                    >
-                      <Link href="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/coupon"}
-                    >
-                      <Link href="/coupon">
-                        <Tag className="mr-2 h-4 w-4" />
-                        <span>Coupon</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  {[
+                    { href: "/", icon: ImageIcon, label: "Convert" },
+                    {
+                      href: "/remove-bg",
+                      icon: ScissorsLineDashed,
+                      label: "Background Remover",
+                    },
+                    { href: "/history", icon: History, label: "History" },
+                    { href: "/profile", icon: User, label: "Profile" },
+                    { href: "/coupon", icon: Tag, label: "Coupon" },
+                  ].map(({ href, icon: Icon, label }) => (
+                    <SidebarMenuItem key={href}>
+                      <SidebarMenuButton asChild isActive={pathname === href}>
+                        <Link href={href}>
+                          <Icon className="mr-2 h-4 w-4" />
+                          <span>{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-            <div className="p-4">
+            <div className="p-4 text-sm text-gray-600">
               {userId ? (
-                <div className="text-sm text-gray-600">
-                  <p className="flex items-center">
-                    Credits:{" "}
-                    {isLoading ? (
-                      <Loader2 className="size-4 shrink-0 animate-spin" />
-                    ) : (
-                      credits
-                    )}
-                  </p>
-                </div>
+                <p className="flex items-center gap-1">
+                  Credits:{" "}
+                  {isLoading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    credits
+                  )}
+                </p>
               ) : (
-                <div className="text-sm text-gray-600">
-                  <p>Free Conversions Left: {3 - freeConversions}/3</p>
-                </div>
+                <p>Free Conversions Left: {3 - freeConversions}/3</p>
               )}
             </div>
           </SidebarFooter>
         </Sidebar>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
+        {/* Animated Mobile Sidebar */}
+        <div
+          className={`fixed inset-0 z-30 md:hidden bg-black/50 transition-opacity duration-300 ${
+            mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+        >
           <div
-            className="fixed inset-0 z-30 bg-black/50 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
+            className={`fixed inset-y-0 left-0 z-40 w-3/4 max-w-sm bg-white p-2 transform transition-transform duration-300 ease-in-out ${
+              mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-white p-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between">
-                  <Link href="/" className="flex items-center gap-2">
-                    <ImageIcon className="h-6 w-6 text-blue-500" />
-                    <span className="text-xl font-bold">ImageWizard</span>
-                  </Link>
-                  <button onClick={() => setMobileMenuOpen(false)}>
-                    <X size={24} />
-                    <span className="sr-only">Close menu</span>
-                  </button>
-                </div>
-                <nav className="flex flex-col gap-4">
-                  <Link
-                    href="/"
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
-                      pathname === "/" ? "text-blue-500" : "text-gray-600"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    Convert
-                  </Link>
-                  <Link
-                    href="/remove-bg"
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
-                      pathname === "/remove-bg"
-                        ? "text-blue-500"
-                        : "text-gray-600"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <ScissorsLineDashed className="h-4 w-4" />
-                    Background Remover
-                  </Link>
-                  <Link
-                    href="/history"
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
-                      pathname === "/history"
-                        ? "text-blue-500"
-                        : "text-gray-600"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <History className="h-4 w-4" />
-                    History
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
-                      pathname === "/profile"
-                        ? "text-blue-500"
-                        : "text-gray-600"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <Link
-                    href="/coupon"
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-blue-500 ${
-                      pathname === "/coupon" ? "text-blue-500" : "text-gray-600"
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Tag className="h-4 w-4" />
-                    Coupon
-                  </Link>
-                </nav>
-                <div className="mt-4 border-t pt-4">
-                  <h3 className="mb-2 text-sm font-semibold">
-                    Conversion Tools
-                  </h3>
-                  <div className="flex flex-col gap-2">
-                    <Link
-                      href="/?type=text"
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-500"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <FileText className="h-4 w-4" />
-                      Image to Text
-                    </Link>
-                    <Link
-                      href="/?type=code"
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-500"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Code className="h-4 w-4" />
-                      Image to Code
-                    </Link>
-                  </div>
-                </div>
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-2">
+                  <ImageIcon className="h-6 w-6 text-blue-500" />
+                  <span className="text-xl font-bold">ImageWizard</span>
+                </Link>
+                <button onClick={() => setMobileMenuOpen(false)}>
+                  <X size={24} />
+                  <span className="sr-only">Close menu</span>
+                </button>
               </div>
+              <nav className="flex flex-col mt-5">
+                {[
+                  { href: "/", icon: ImageIcon, label: "Convert" },
+                  {
+                    href: "/remove-bg",
+                    icon: ScissorsLineDashed,
+                    label: "Background Remover",
+                  },
+                  { href: "/history", icon: History, label: "History" },
+                  { href: "/profile", icon: User, label: "Profile" },
+                  { href: "/coupon", icon: Tag, label: "Coupon" },
+                ].map(({ href, icon: Icon, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors p-2 hover:text-blue-500 ${
+                      pathname === href ? "text-blue-500 bg-gray-50" : "text-gray-600"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                ))}
+              </nav>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 w-full md:p-6">{children}</main>
+        {/* Main content */}
+        <main className="flex-1 p-4 w-full md:p-6">
+          <div className="flex flex-col justify-between w-full">
+            {children}
+            <Footer />
+          </div>
+        </main>
       </div>
     </div>
   );
