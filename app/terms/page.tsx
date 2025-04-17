@@ -105,10 +105,10 @@ export default function TermsPage() {
           <p>
             If you have any questions about these Terms, please contact us at{" "}
             <a
-              href="mailto:support@imagewizard.com"
+              href="mailto:asrafulislam0312@gmail.com"
               className="text-blue-600 hover:underline"
             >
-              support@imagewizard.com
+              asrafulislam0312@gmail.com
             </a>
             .
           </p>

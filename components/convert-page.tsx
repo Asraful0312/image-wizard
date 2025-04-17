@@ -121,7 +121,7 @@ export function ConvertPage() {
           file: base64File,
           type: conversionType,
           language,
-          translationLanguage, // Pass translation language
+          translationLanguage,
           clerkId: user?.id || null,
         });
 
@@ -150,6 +150,7 @@ export function ConvertPage() {
       }
     } catch (error) {
       console.error("Conversion error:", error);
+      console.log("error", error);
     } finally {
       setIsLoading(false);
     }
@@ -204,7 +205,7 @@ export function ConvertPage() {
                   value={conversionType}
                   onValueChange={(value) => {
                     setConversionType(value);
-                    setTranslationLanguage(null); // Reset translation language when type changes
+                    setTranslationLanguage(null);
                   }}
                 >
                   <SelectTrigger className="w-full">
@@ -292,14 +293,13 @@ export function ConvertPage() {
                   <Select
                     value={translationLanguage || "eng"}
                     onValueChange={(value) =>
-                      setTranslationLanguage(value === "" ? 'english' : value)
+                      setTranslationLanguage(value === "" ? "english" : value)
                     }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="No translation" />
                     </SelectTrigger>
                     <SelectContent className="w-full">
-                    
                       <SelectItem value="en">English</SelectItem>
                       <SelectItem value="es">Spanish</SelectItem>
                       <SelectItem value="fr">French</SelectItem>

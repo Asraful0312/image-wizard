@@ -100,10 +100,10 @@ export default function PrivacyPage() {
             correct, or delete your personal data. To exercise these rights,
             contact us at{" "}
             <a
-              href="mailto:support@imagewizard.com"
+              href="mailto:asrafulislam0312@gmail.com"
               className="text-blue-600 hover:underline"
             >
-              support@imagewizard.com
+              asrafulislam0312@gmail.com
             </a>
             .
           </p>
