@@ -92,7 +92,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
               Drag and drop your image or PDF here
             </h3>
             <p className="mb-4 text-sm text-gray-500">
-              Supports: JPG, PNG, GIF, PDF (max 5MB)
+              Supports: JPG, PNG, GIF, PDF (max 1MB)
             </p>
             <Button
               onClick={() => inputRef.current?.click()}

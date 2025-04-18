@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
           inputUrl: true,
           output: true,
           createdAt: true,
+          translationLanguage: true,
         },
       }),
       prisma.conversion.count({
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest) {
         type: c.type as "text" | "code",
         inputUrl: c.inputUrl,
         output: c.output,
+        translationLanguage: c.translationLanguage,
       })),
       total,
       page,

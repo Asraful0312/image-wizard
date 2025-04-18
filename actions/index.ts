@@ -161,7 +161,7 @@ export async function convertImageToText({
       contentType = "markdown";
     } else if (type === "text-ai" || type === "code") {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const prompt =
         type === "code"
@@ -191,7 +191,7 @@ export async function convertImageToText({
           de: "German",
           hi: "Hindi",
           bn: "Bengali",
-          en: "English"
+          en: "English",
         };
         const targetLanguage = languageMap[translationLanguage];
         if (!targetLanguage) {
@@ -236,7 +236,8 @@ export async function convertImageToText({
                 ? "pdf-to-text"
                 : "image-to-text",
             inputUrl: "some-cloud-url",
-            output: text, // Store only the extracted text
+            output: text,
+            translationLanguage: translatedText,
           },
         }),
         prisma.user.update({
@@ -257,7 +258,8 @@ export async function convertImageToText({
               ? "pdf-to-text"
               : "image-to-text",
           inputUrl: "some-cloud-url",
-          output: text, // Store only the extracted text
+          output: text,
+          translationLanguage: translatedText,
         },
       });
     }

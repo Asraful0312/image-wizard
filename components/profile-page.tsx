@@ -68,7 +68,7 @@ export function ProfilePage() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 min-h-[70vh]">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center p-6">
             <h2 className="mb-4 text-xl font-semibold">Sign In Required</h2>

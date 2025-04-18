@@ -467,7 +467,12 @@ export function ConvertPage() {
                       "max-h-[400px] overflow-auto rounded-md p-4 w-full bg-gray-100 text-black"
                     )}
                   >
-                    <p>{result.translatedText}</p>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {result.translatedText}
+                    </ReactMarkdown>
                   </div>
                 </div>
               )}

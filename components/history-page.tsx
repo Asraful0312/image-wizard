@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, FileText, Code } from "lucide-react";
+import { Eye, FileText, Code, Check, Copy } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import { cn, getCodeLanguage } from "@/lib/utils";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Conversion {
   id: string;
   date: string;
-  type: "text" | "code";
+  type: "text" | "image-to-code";
   inputUrl: string;
   output: string;
+  translationLanguage?: string;
 }
 
 interface ConversionsResponse {
@@ -57,6 +64,7 @@ export function HistoryPage() {
   const { isSignedIn, user } = useUser();
   const [selectedItem, setSelectedItem] = useState<Conversion | null>(null);
   const [page, setPage] = useState(1);
+  const [copied, setCopied] = useState<string | null>(null);
   const pageSize = 10;
 
   const { data, isLoading, error } = useQuery<ConversionsResponse, Error>({
@@ -68,7 +76,7 @@ export function HistoryPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 min-h-[70vh]">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center p-6">
             <h2 className="mb-4 text-xl font-semibold">Sign In Required</h2>
@@ -86,8 +94,17 @@ export function HistoryPage() {
     );
   }
 
+  const copyToClipboard = (text: string) => {
+    if (text) {
+      navigator.clipboard.writeText(text);
+      setCopied(text);
+      setTimeout(() => setCopied(null), 2000);
+    }
+  };
+
+  console.log("data", data);
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl min-h-[70vh]">
       <h1 className="mb-6 text-xl md:text-2xl font-bold">Conversion History</h1>
 
       <Card className="w-full">
@@ -151,7 +168,7 @@ export function HistoryPage() {
                           {item.output}
                         </TableCell>
                         <TableCell>
-                          <Drawer >
+                          <Drawer>
                             <DrawerTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -163,12 +180,12 @@ export function HistoryPage() {
                                 <span className="sr-only">View details</span>
                               </Button>
                             </DrawerTrigger>
-                            <DrawerContent className="max-w-3xl mx-auto pb-6">
+                            <DrawerContent className="max-w-3xl mx-auto pb-6 ">
                               <DrawerHeader>
                                 <DrawerTitle>Conversion Details</DrawerTitle>
                               </DrawerHeader>
                               {selectedItem && (
-                                <div className="grid gap-4 py-4 px-4">
+                                <div className="grid gap-4 py-4 px-4 overflow-y-scroll">
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
                                       <h3 className="mb-2 text-sm font-medium">
@@ -200,22 +217,99 @@ export function HistoryPage() {
                                     />
                                   </div>
                                   <div>
-                                    <h3 className="mb-2 text-sm font-medium">
-                                      Output
-                                    </h3>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h3 className="text-sm font-medium">
+                                        Output
+                                      </h3>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() =>
+                                          copyToClipboard(item.output)
+                                        }
+                                        className="transition-all duration-200 hover:scale-105"
+                                      >
+                                        {copied ? (
+                                          <Check className="h-4 w-4 text-green-500" />
+                                        ) : (
+                                          <Copy className="h-4 w-4" />
+                                        )}
+                                        <span className="sr-only">
+                                          Copy extracted text
+                                        </span>
+                                      </Button>
+                                    </div>
                                     <div
                                       className={`max-h-[300px] overflow-auto rounded-md bg-gray-50 p-4 ${
-                                        selectedItem.type === "code"
+                                        selectedItem.type === "image-to-code"
                                           ? "font-mono text-sm"
                                           : ""
                                       }`}
                                     >
-                                      {selectedItem.type === "code" ? (
-                                        <pre>{selectedItem.output}</pre>
+                                      {selectedItem.type === "image-to-code" ? (
+                                        <SyntaxHighlighter
+                                          language={getCodeLanguage(
+                                            item.output
+                                          )}
+                                          style={vscDarkPlus}
+                                          customStyle={{
+                                            background: "transparent",
+                                            padding: 0,
+                                            margin: 0,
+                                          }}
+                                        >
+                                          {item.output}
+                                        </SyntaxHighlighter>
                                       ) : (
-                                        <p>{selectedItem.output}</p>
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm]}
+                                          rehypePlugins={[rehypeRaw]}
+                                        >
+                                          {item.output}
+                                        </ReactMarkdown>
                                       )}
                                     </div>
+
+                                    {item.translationLanguage && (
+                                      <div className="mt-6">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h3 className="text-sm font-medium">
+                                            Translated Text
+                                          </h3>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() =>
+                                              copyToClipboard(
+                                                item?.translationLanguage as string
+                                              )
+                                            }
+                                            className="transition-all duration-200 hover:scale-105"
+                                          >
+                                            {copied ? (
+                                              <Check className="h-4 w-4 text-green-500" />
+                                            ) : (
+                                              <Copy className="h-4 w-4" />
+                                            )}
+                                            <span className="sr-only">
+                                              Copy translated text
+                                            </span>
+                                          </Button>
+                                        </div>
+                                        <div
+                                          className={cn(
+                                            "max-h-[400px] overflow-auto rounded-md p-4 w-full bg-gray-100 text-black"
+                                          )}
+                                        >
+                                          <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            rehypePlugins={[rehypeRaw]}
+                                          >
+                                            {item.translationLanguage}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
