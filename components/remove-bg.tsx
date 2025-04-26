@@ -140,11 +140,11 @@ export default function RemoveBgPage() {
                 Drag and drop your image here
               </h3>
               <p className="mb-4 text-sm text-gray-500">
-                Supports: JPG, PNG, GIF (max 5MB)
+                Supports: JPG, PNG, JPEG
               </p>
               <Button
                 onClick={() => inputRef.current?.click()}
-                className="transition-transform duration-200 hover:scale-105"
+                className="transition-transform duration-200 hover:scale-105 bg-purple-600 hover:bg-purple-500"
               >
                 Browse Files
               </Button>

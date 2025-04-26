@@ -84,7 +84,7 @@ export function HistoryPage() {
               Please sign in to view your conversion history.
             </p>
             <SignInButton mode="modal">
-              <Button className="transition-transform duration-200 hover:scale-105">
+              <Button className="transition-transform duration-200 hover:scale-105 bg-purple-600 hover:bg-purple-500">
                 Sign In
               </Button>
             </SignInButton>

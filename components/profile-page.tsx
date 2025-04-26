@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SignOutButton, useUser } from "@clerk/nextjs";
+import { SignOutButton, useUser, SignInButton } from "@clerk/nextjs";
 import Loader from "./Loader";
 
 type ProfileData = {
@@ -75,12 +74,11 @@ export function ProfilePage() {
             <p className="mb-6 text-center text-gray-600">
               Please sign in to view your profile.
             </p>
-            <Button
-              asChild
-              className="transition-transform duration-200 hover:scale-105"
-            >
-              <a href="/sign-in">Sign In</a>
-            </Button>
+            <SignInButton mode="modal">
+                      <Button className="transition-transform duration-200 hover:scale-105 bg-purple-600 hover:bg-purple-500">
+                        Sign In
+                      </Button>
+                    </SignInButton>
           </CardContent>
         </Card>
       </div>

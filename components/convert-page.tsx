@@ -22,6 +22,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 
 async function fetchCredits() {
   const res = await fetch("/api/user/credits");
@@ -30,7 +31,11 @@ async function fetchCredits() {
   return data.credits ?? 0;
 }
 
-export function ConvertPage() {
+type Props = {
+  hero?: boolean;
+};
+
+export function ConvertPage({ hero }: Props) {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type");
 
@@ -184,8 +189,14 @@ export function ConvertPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <h1 className="mb-6 text-xl md:text-2xl font-bold">Convert Your File</h1>
+    <div className={"mx-auto w-full max-w-5xl"}>
+      <h1 className="mb-4 text-xl md:text-2xl font-bold">Convert Your File</h1>
+
+      {hero && (
+        <p className="text-purple-500 font-medium text-start mb-3">
+          Go to <Link className="font-bold text-purple-600 underline" href="convert">Dashboard</Link> for more options
+        </p>
+      )}
 
       <div className="mb-6 grid gap-6 w-full lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -338,7 +349,7 @@ export function ConvertPage() {
                         (conversionType === "text-ai" && credits < 2) ||
                         (conversionType === "text" && credits < 1)))
                   }
-                  className="w-full bg-blue-500 hover:bg-blue-600 transition-transform duration-200 hover:scale-105"
+                  className="w-full bg-purple-500 hover:bg-purple-600 transition-transform duration-200 hover:scale-105"
                 >
                   {isLoading ? "Converting..." : "Convert"}
                 </Button>

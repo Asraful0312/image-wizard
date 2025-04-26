@@ -93,12 +93,9 @@ export function CouponPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center pb-6 pt-2">
-            <SignInButton mode="modal">
-              <Button
-                variant="link"
-                className="mt-1 h-auto p-0 text-blue-500 w-full"
-              >
-                Sign In to Continue
+           <SignInButton mode="modal">
+              <Button className="transition-transform duration-200 hover:scale-105 bg-purple-600 hover:bg-purple-500">
+                Sign In To Continue
               </Button>
             </SignInButton>
           </CardFooter>
@@ -151,7 +148,7 @@ export function CouponPage() {
               onClick={handleRedeem}
               disabled={loading}
               size="lg"
-              className="w-full"
+              className="w-full bg-purple-600 hover:bg-purple-500"
             >
               {loading ? (
                 <>

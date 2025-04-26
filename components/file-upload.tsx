@@ -80,7 +80,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
         {!selectedFile ? (
           <div
             className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors w-full ${
-              dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+              dragActive ? "border-blue-500 bg-purple-50" : "border-gray-300"
             }`}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
@@ -96,7 +96,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
             </p>
             <Button
               onClick={() => inputRef.current?.click()}
-              className="transition-transform duration-200 hover:scale-105"
+              className="transition-transform duration-200 hover:scale-105 bg-purple-600 hover:bg-purple-700"
             >
               Browse Files
             </Button>

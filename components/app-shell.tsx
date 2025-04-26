@@ -15,6 +15,7 @@ import {
   Tag,
   Loader2,
   ScissorsLineDashed,
+  House,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -32,7 +33,6 @@ import {
   SidebarMenuItem,
 } from "./ui/sidebar";
 import { useQuery } from "@tanstack/react-query";
-import Footer from "./footer";
 
 const fetchCredits = async () => {
   const res = await fetch("/api/user/credits");
@@ -69,22 +69,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
             <button
-              className="md:hidden"
+              className="lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               <span className="sr-only">Toggle menu</span>
             </button>
             <Link href="/" className="flex items-center gap-2">
-              <ImageIcon className="h-6 w-6 text-blue-500" />
+              <ImageIcon className="h-6 w-6 text-purple-500" />
               <span className="text-lg md:text-xl font-bold">
                 ImageToTextNow
               </span>
             </Link>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6">
             {[
-              { href: "/", label: "Convert" },
+              { href: "/", label: "Home" },
+              { href: "/convert", label: "Convert" },
               { href: "/history", label: "History" },
               { href: "/profile", label: "Profile" },
               { href: "/coupon", label: "Coupon" },
@@ -93,8 +94,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={`text-sm font-medium transition-colors hover:text-blue-500 ${
-                  pathname === href ? "text-blue-500" : "text-gray-600"
+                className={`text-sm font-medium transition-colors hover:text-purple-500 ${
+                  pathname === href ? "text-purple-500" : "text-gray-600"
                 }`}
               >
                 {label}
@@ -163,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {[
-                    { href: "/", icon: ImageIcon, label: "Convert" },
+                    { href: "/convert", icon: ImageIcon, label: "Convert" },
                     {
                       href: "/remove-bg",
                       icon: ScissorsLineDashed,
@@ -206,7 +207,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Animated Mobile Sidebar */}
         <div
-          className={`fixed inset-0 z-30 md:hidden bg-black/50 transition-opacity duration-300 ${
+          className={`fixed inset-0 z-30 lg:hidden bg-black/50 transition-opacity duration-300 ${
             mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
           onClick={() => setMobileMenuOpen(false)}
@@ -230,7 +231,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <nav className="flex flex-col mt-5">
                 {[
-                  { href: "/", icon: ImageIcon, label: "Convert" },
+                  { href: "/", label: "Home", icon: House },
+                  { href: "/convert", icon: ImageIcon, label: "Convert" },
                   {
                     href: "/remove-bg",
                     icon: ScissorsLineDashed,
@@ -244,8 +246,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     key={href}
                     href={href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors p-2 hover:text-blue-500 ${
-                      pathname === href ? "text-blue-500 bg-gray-50" : "text-gray-600"
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors p-2 hover:text-purple-500 ${
+                      pathname === href
+                        ? "text-purple-500 bg-gray-50"
+                        : "text-gray-600"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -258,11 +262,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 p-4 w-full md:p-6">
-          <div className="flex flex-col justify-between w-full">
-            {children}
-            <Footer />
-          </div>
+        <main className="flex-1 p-4 w-full lg:p-6">
+          <div className="flex flex-col justify-between w-full">{children}</div>
         </main>
       </div>
     </div>
