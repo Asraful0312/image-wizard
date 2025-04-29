@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     }
 
     const checkoutUrl = new URL(
-      "https://image-wizard.lemonsqueezy.com/buy/3fd26a17-dd33-46cf-ba28-a62c969da9e9"
+      process.env.LEMONSQUEEZY_CHECKOUT_URL ||
+        "https://image-wizard.lemonsqueezy.com/buy/3fd26a17-dd33-46cf-ba28-a62c969da9e9"
     );
 
     // Pass custom data (only userId, since variant will be selected by the user)

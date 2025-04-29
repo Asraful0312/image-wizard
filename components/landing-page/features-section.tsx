@@ -4,7 +4,13 @@ import type React from "react";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Zap, FileText, CreditCard, Shield } from "lucide-react";
+import {
+  Zap,
+  FileText,
+  CreditCard,
+  Shield,
+  ScissorsLineDashed,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FeatureCardProps {
@@ -72,6 +78,11 @@ export default function FeaturesSection() {
       description:
         "Convert images, PDFs, or use AI for enhanced text extraction",
       icon: <FileText className="h-6 w-6" />,
+    },
+    {
+      title: "Free Image Background Remover",
+      description: "Remove background from a image for free",
+      icon: <ScissorsLineDashed className="h-6 w-6" />,
     },
     {
       title: "Credit System",

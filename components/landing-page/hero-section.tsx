@@ -16,10 +16,10 @@ export default function HeroSection() {
   return (
     <div className="relative overflow-hidden w-full">
       {/* Enhanced Background with animated elements */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white to-purple-50 overflow-hidden w-full">
+      <div className="absolute inset-0 bg-gradient-to-b from-white to-purple-50 overflow-hidden w-full ">
         {/* Animated gradient orbs */}
         <div
-          className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-purple-300/30 to-transparent rounded-full blur-3xl animate-pulse"
+          className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-purple-300/30 to-transparent rounded-full blur-3xl animate-pulse "
           style={{ animationDuration: "8s" }}
         />
         <div
@@ -45,7 +45,7 @@ export default function HeroSection() {
 
         {/* Grid pattern overlay */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.05] "
           style={{
             backgroundImage:
               "linear-gradient(to right, #8B5CF6 1px, transparent 1px), linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)",
@@ -58,11 +58,11 @@ export default function HeroSection() {
       </div>
 
       <div className="w-full max-w-[1100px] mx-auto sm:px-4 py-20 md:py-32 relative z-10">
-        <div className="w-full max-w-5xl mx-auto text-center">
+        <div className="w-full max-w-5xl mx-auto text-center mt-10">
           {/* Headline with fade-in animation */}
           <h1
             className={cn(
-              "text-3xl md:text-5xl font-bold text-gray-900 mb-6 transition-opacity duration-1000 ease-out opacity-0",
+              "text-3xl md:text-5xl px-2 sm:px-0 font-bold text-gray-900 mb-6 transition-opacity duration-1000 ease-out opacity-0",
               isLoaded && "opacity-100"
             )}
           >
