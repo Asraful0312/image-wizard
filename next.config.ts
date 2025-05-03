@@ -25,6 +25,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/sitemap-0.xml",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/xml",
+          },
+        ],
+      },
     ];
   },
 };
