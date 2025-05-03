@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "postbuild": "next-sitemap"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -34,6 +35,7 @@
     "micro": "^10.0.1",
     "motion": "^12.6.5",
     "next": "15.2.3",
+    "next-sitemap": "^4.2.3",
     "onnxruntime-web": "^1.21.0-dev.20250206-d981b153d3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

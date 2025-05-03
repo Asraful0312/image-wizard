@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://imagetotextnow.xyz
+
+# Sitemaps
+Sitemap: https://imagetotextnow.xyz/sitemap.xml
