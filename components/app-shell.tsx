@@ -77,9 +77,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <Link href="/" className="flex items-center gap-2">
               <ImageIcon className="h-6 w-6 text-purple-500" />
-              <span className="text-lg md:text-xl font-bold">
-                ImageToTextNow
-              </span>
             </Link>
           </div>
           <nav className="hidden lg:flex items-center gap-6">

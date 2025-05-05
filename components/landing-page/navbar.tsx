@@ -40,7 +40,6 @@ export default function Navbar() {
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-2">
             <ImageIcon className="h-8 w-8 text-[#6B46C1]" />
-            <span className="font-bold text-xl">Image to text now</span>
           </Link>
 
           {/* Desktop Navigation */}

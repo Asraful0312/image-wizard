@@ -47,22 +47,31 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
   };
 
   const handleFile = (file: File) => {
-    if (file.type.startsWith("image/") || file.type === "application/pdf") {
-      setSelectedFile(file);
-      onFileSelected(file);
+    const isPDF = file.type === "application/pdf";
+    const isImage = file.type.startsWith("image/");
+    const maxSizeMB = 1;
 
-      // Create preview for images only
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setPreview(null); // No preview for PDFs
-      }
+    if (!isPDF && !isImage) {
+      alert("Please upload an image or a PDF file.");
+      return;
+    }
+
+    if (isPDF && file.size > maxSizeMB * 1024 * 1024) {
+      alert("PDF must be less than 1MB.");
+      return;
+    }
+
+    setSelectedFile(file);
+    onFileSelected(file);
+
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     } else {
-      alert("Please upload an image or PDF file");
+      setPreview(null); // No preview for PDFs
     }
   };
 

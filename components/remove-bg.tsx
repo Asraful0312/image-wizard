@@ -30,6 +30,7 @@ export default function RemoveBgPage() {
 
     // Validate file size: max 5MB
     if (selectedFile.size > 5 * 1024 * 1024) {
+
       setError("Image too large. Max 5MB.");
       setFile(null);
       setPreview(null);
