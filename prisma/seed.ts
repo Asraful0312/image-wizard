@@ -8,6 +8,7 @@ async function main() {
     data: [
       { code: "BONGO-BOLTU", credits: 50, expiresAt: new Date("2025-12-31") },
       { code: "RAYHAN-KHAN", credits: 25, expiresAt: new Date("2025-06-30") },
+      { code: "LAUNCH-TODAY", credits: 20, expiresAt: new Date("2025-12-31") },
     ],
   });
   console.log("Seeded coupons");

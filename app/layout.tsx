@@ -61,15 +61,10 @@ export default function RootLayout({
                 }),
               }}
             />
-            <meta
-              name="google-site-verification"
-              content="sX4zMfEvkW61LuTRt8qj5nkXHP5woMXgX4X7YozlBoo"
-            />
           </head>
           <body className={`${inter.className} min-h-screen bg-[#F9FAFB]`}>
             <SidebarProvider>{children}</SidebarProvider>
             <Toaster richColors />
-       
           </body>
         </html>
       </ClerkProvider>

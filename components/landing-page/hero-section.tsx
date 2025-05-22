@@ -60,15 +60,15 @@ export default function HeroSection() {
       <div className="w-full max-w-[1100px] mx-auto sm:px-4 py-20 md:py-32 relative z-10">
         <div className="w-full max-w-5xl mx-auto text-center mt-10">
           {/* Headline with fade-in animation */}
+
           <h1
             className={cn(
-              "text-3xl md:text-5xl px-2 sm:px-0 font-bold text-gray-900 mb-6 transition-opacity duration-1000 ease-out opacity-0",
+              "text-3xl md:text-5xl px-2 sm:px-0 font-bold mb-4 transition-opacity duration-1000 ease-out opacity-0 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-400 dark:from-purple-300 dark:to-orange-200",
               isLoaded && "opacity-100"
             )}
           >
             Convert Images to Text or Code Instantly
           </h1>
-
           {/* Subheadline with fade-in animation */}
           <p
             className={cn(
@@ -78,7 +78,6 @@ export default function HeroSection() {
           >
             Upload your image or PDF and let AI do the magic
           </p>
-
           {/* Conversion component with slide-up animation */}
           <div
             className={cn(
